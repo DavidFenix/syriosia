@@ -7,6 +7,9 @@ Route::get('/', function () {
     return view('welcome');
 });
 
+
+
+//diagnóstivo fora do middleware mostrou que a sessão funciona
 Route::get('/diagini', [DiagController::class, 'indexini']);
 Route::get('/diagini/cookie-testini', [DiagController::class, 'cookieTestini']);
 
@@ -20,6 +23,8 @@ Route::middleware(['web'])->group(function () {
 
     // ==================================================
     // DIAGNÓSTICO
+    //1º acesse /diag/cookie-test para carregar o cookie
+    //2º acesse /diag para ver se o cookie foi recebido, ou inspecione o codigo no navegador para ver o cookie
     // ==================================================
     Route::prefix('diag')->group(function () { 
 
