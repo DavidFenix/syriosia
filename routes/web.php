@@ -7,6 +7,9 @@ Route::get('/', function () {
     return view('welcome');
 });
 
+Route::get('/diagini', [DiagController::class, 'indexini']);
+Route::get('/diagini/cookie-testini', [DiagController::class, 'cookieTestini']);
+
 Route::middleware(['web'])->group(function () {
 
     // Página inicial
