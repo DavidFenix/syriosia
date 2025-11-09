@@ -28,8 +28,15 @@
 
         <li class="list-group-item">
             <strong>SESSION_SECURE_COOKIE:</strong>
-            {{ $status['secure_cookie'] === 'true' ? '✅ true' :
-                ($status['secure_cookie'] === 'false' ? '⚠️ false' : 'null') }}
+            @php $secure = config('session.secure'); @endphp
+
+            @if($secure === true)
+                ✅ true
+            @elseif($secure === false)
+                ⚠️ false
+            @else
+                null
+            @endif
         </li>
 
         <li class="list-group-item">

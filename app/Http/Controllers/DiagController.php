@@ -17,13 +17,14 @@ class DiagController extends Controller
         $appEnv = env('APP_ENV', 'unknown');
         $appUrl = env('APP_URL', '');
         $cookieTest = isset($_COOKIE['probe']);
-        $secureCookie = env('SESSION_SECURE_COOKIE');
+        //$secureCookie = env('SESSION_SECURE_COOKIE');
+        $secureCookie = config('session.secure');
 
         $status = [
             'railway' => $appUrl && str_contains($appUrl, 'railway.app'),
             'https' => $isHttps,
             'cookie_received' => $cookieTest,
-            'secure_cookie' => $secureCookie,
+            'secure_cookie' => config('session.secure'),
             'env' => $appEnv,
         ];
 

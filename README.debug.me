@@ -1,106 +1,108 @@
 README.debug.me
 
+
+
 ----------------------------------------------------------
-Fase 2
+Fase 2 :: sucesso  :: tudo funcionando do railway
 ----------------------------------------------------------
---Arquivos adicionados
-	--app\Http\Controllers\Auth\...php
-	--app\Helpers\helpers.php
-	--app\Http\Controllers\AuthController.php
-	--app\Http\Controllers\Professor\...php
-	--App\Http\Middleware\EnsureContextSelected.php
-	--App\Http\Middleware\RoleMiddleware.php
-	--App\Http\Middleware\BaseAuthModel.php
-	--App\Http\Middleware\BaseModel.php
-	--App\Models\Escola.php
-	--App\Models\Ocorrencia.php
-	--App\Models\Oferta.php
-	--App\Models\Professor.php
-	--App\Models\Role.php
-	--App\Models\Usuario.php
-	--App\Models\UsuarioRole.php
-	--resources\views\auth\...php
-	--resources\views\professor\...php
+	--Arquivos adicionados
+		--app\Http\Controllers\Auth\...php
+		--app\Helpers\helpers.php
+		--app\Http\Controllers\AuthController.php
+		--app\Http\Controllers\Professor\...php
+		--App\Http\Middleware\EnsureContextSelected.php
+		--App\Http\Middleware\RoleMiddleware.php
+		--App\Http\Middleware\BaseAuthModel.php
+		--App\Http\Middleware\BaseModel.php
+		--App\Models\Escola.php
+		--App\Models\Ocorrencia.php
+		--App\Models\Oferta.php
+		--App\Models\Professor.php
+		--App\Models\Role.php
+		--App\Models\Usuario.php
+		--App\Models\UsuarioRole.php
+		--resources\views\auth\...php
+		--resources\views\professor\...php
 
---Arquivos modificados
-	--app\Http\Kernel.php
-		--'role' => \App\Http\Middleware\RoleMiddleware::class,
-        --'ensure.context' => \App\Http\Middleware\EnsureContextSelected::class,
-    --composer.json
-    	"files": [
-            "app/Helpers/helpers.php"
-        ]
-    --config\auth.php
-    	'users' => [
-            'driver' => 'eloquent',
-            'model' => App\Models\Usuario::class,
-        ],
-    --web.php
-    	--use Illuminate\Http\Request;
-		--use Illuminate\Http\Response;
-		--use Illuminate\Support\Facades\Session;
-		--use Symfony\Component\HttpFoundation\Cookie;
-		--use App\Http\Controllers\Auth\LoginController;
-    	--use App\Http\Controllers\Escola\ProfessorController;
-		--use App\Http\Controllers\Professor\{
-			    DashboardController as ProfessorDashboardController,
-			    OfertaController,
-			    OcorrenciaController,
-			    RelatorioController,
-			    PerfilController
-			};
-    	
-    	--grupo da rotas web
-	    	Route::middleware(['web'])->group(function () {
-		    	Route::get('/', fn() => redirect()->route('login'));
-			    // Login / Logout (públicas)
-			    Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
-			    Route::post('/login', [LoginController::class, 'login']);
-			    Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
-			});
+	--Arquivos modificados
+		--app\Http\Kernel.php
+			--'role' => \App\Http\Middleware\RoleMiddleware::class,
+	        --'ensure.context' => \App\Http\Middleware\EnsureContextSelected::class,
+	    --composer.json
+	    	"files": [
+	            "app/Helpers/helpers.php"
+	        ]
+	    --config\auth.php
+	    	'users' => [
+	            'driver' => 'eloquent',
+	            'model' => App\Models\Usuario::class,
+	        ],
+	    --web.php
+	    	--use Illuminate\Http\Request;
+			--use Illuminate\Http\Response;
+			--use Illuminate\Support\Facades\Session;
+			--use Symfony\Component\HttpFoundation\Cookie;
+			--use App\Http\Controllers\Auth\LoginController;
+	    	--use App\Http\Controllers\Escola\ProfessorController;
+			--use App\Http\Controllers\Professor\{
+				    DashboardController as ProfessorDashboardController,
+				    OfertaController,
+				    OcorrenciaController,
+				    RelatorioController,
+				    PerfilController
+				};
+	    	
+	    	--grupo da rotas web
+		    	Route::middleware(['web'])->group(function () {
+			    	Route::get('/', fn() => redirect()->route('login'));
+				    // Login / Logout (públicas)
+				    Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
+				    Route::post('/login', [LoginController::class, 'login']);
+				    Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
+				});
 
-		---grupo de rotas auth
-	    	Route::middleware(['auth'])->group(function () {
-			    Route::get('/choose-school', [LoginController::class, 'chooseSchool'])->name('choose.school');
-			    Route::get('/choose-role/{schoolId}', [LoginController::class, 'chooseRole'])->name('choose.role');
-			    Route::post('/set-context', [LoginController::class, 'setContextPost'])->name('set.context');
-			});
+			---grupo de rotas auth
+		    	Route::middleware(['auth'])->group(function () {
+				    Route::get('/choose-school', [LoginController::class, 'chooseSchool'])->name('choose.school');
+				    Route::get('/choose-role/{schoolId}', [LoginController::class, 'chooseRole'])->name('choose.role');
+				    Route::post('/set-context', [LoginController::class, 'setContextPost'])->name('set.context');
+				});
 
-		--grupo de rotas 'auth' e 'ensure.context'
-	    	Route::middleware(['auth', 'ensure.context'])->group(function () {
-			    Route::prefix('professor')
-			        ->middleware(['role:professor'])
-			        ->name('professor.')
-			        ->group(function () {
+			--grupo de rotas 'auth' e 'ensure.context'
+		    	Route::middleware(['auth', 'ensure.context'])->group(function () {
+				    Route::prefix('professor')
+				        ->middleware(['role:professor'])
+				        ->name('professor.')
+				        ->group(function () {
 
-			        [...]
+				        [...]
 
-		    	});
-		    });
+			    	});
+			    });
 
 -----------------------------------------------------------
-Fase 1
+Fase 1 :: sucesso :: sessão e cookie funcionando
 -----------------------------------------------------------
-composer.json
---alterou-se a versao PHP
-	-- "php": "^7.3|^8.0",
+	composer.json
+	--alterou-se a versao PHP
+		-- "php": "^7.3|^8.0",
 
-DiagController.php
---criou-se o controle para fezer diagnóstico da sessão e cookies
---criou-se suas rotas
-	--Route::get('/diag', [DiagController::class, 'index']);
-	--Route::get('/diag/cookie-test', [DiagController::class, 'cookieTest']);
-TrustProxies.php
---alteração para https
-	--protected $proxies = '*';
-    --protected $headers = Request::HEADER_X_FORWARDED_ALL;
+	DiagController.php
+	--criou-se o controle para fezer diagnóstico da sessão e cookies
+	--criou-se suas rotas
+		--Route::get('/diag', [DiagController::class, 'index']);
+		--Route::get('/diag/cookie-test', [DiagController::class, 'cookieTest']);
+	TrustProxies.php
+	--alteração para https
+		--protected $proxies = '*';
+	    --protected $headers = Request::HEADER_X_FORWARDED_ALL;
 
-Como testar resultado inicial com sucesso dentro e fora do Middleware
-	--passando por dentro middleware
-		--1º acesse /diag/cookie-test para carregar o cookie
-	    --2º acesse /diag para ver se o cookie foi recebido, ou inspecione o codigo no navegador para ver o cookie
+	Como testar resultado inicial com sucesso dentro e fora do Middleware
+		--passando por dentro middleware
+			--1º acesse /diag/cookie-test para carregar o cookie
+		    --2º acesse /diag para ver se o cookie foi recebido, ou inspecione o codigo no navegador para ver o cookie
 
-	--passando por fora do middleware
-		--1º acesse /diagini/cookie-testini para carregar o cookie
-	    --2º acesse /diagini para ver se o cookie foi recebido, ou inspecione o codigo no navegador para ver o cookie
+		--passando por fora do middleware
+			--1º acesse /diagini/cookie-testini para carregar o cookie
+		    --2º acesse /diagini para ver se o cookie foi recebido, ou inspecione o codigo no navegador para ver o cookie
 
