@@ -1,7 +1,25 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use Illuminate\Http\Request;
+use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Session;
+use Symfony\Component\HttpFoundation\Cookie;
+
+// Auth
+use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\DiagController;
+
+use App\Http\Controllers\Escola\ProfessorController;
+
+// Professor
+use App\Http\Controllers\Professor\{
+    DashboardController as ProfessorDashboardController,
+    OfertaController,
+    OcorrenciaController,
+    RelatorioController,
+    PerfilController
+};
 
 Route::get('/', function () {
     return view('welcome');
@@ -16,7 +34,12 @@ Route::get('/diagini/cookie-testini', [DiagController::class, 'cookieTestini']);
 Route::middleware(['web'])->group(function () {
 
     // Página inicial
-    //Route::get('/', fn() => redirect()->route('login'));
+    Route::get('/', fn() => redirect()->route('login'));
+
+    // Login / Logout (públicas)
+    Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
+    Route::post('/login', [LoginController::class, 'login']);
+    Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
 
     // Login temporário (placeholder)
     //Route::get('/login', fn() => 'Tela de login')->name('login');
@@ -106,5 +129,88 @@ Route::middleware(['web'])->group(function () {
         <h3>Headers</h3><pre>" . print_r($headers, true) . "</pre>
         <a href='/way'>Voltar</a>", 200, ['Content-Type' => 'text/html']);
     });
+
+});
+
+
+
+/*
+|--------------------------------------------------------------------------
+| Pós-Login (com sessão carregada) — Escolha de Contexto
+|--------------------------------------------------------------------------
+| Essas rotas precisam apenas do usuário autenticado, sem exigir contexto.
+| Aqui o cookie de sessão já foi entregue ao navegador.
+*/
+Route::middleware(['auth'])->group(function () {
+    Route::get('/choose-school', [LoginController::class, 'chooseSchool'])->name('choose.school');
+    Route::get('/choose-role/{schoolId}', [LoginController::class, 'chooseRole'])->name('choose.role');
+    Route::post('/set-context', [LoginController::class, 'setContextPost'])->name('set.context');
+});
+
+
+/*
+|--------------------------------------------------------------------------
+| Rotas Protegidas por Contexto (auth + ensure.context)
+|--------------------------------------------------------------------------
+| A partir daqui, o contexto (current_school_id/current_role) já deve existir.
+| Evitamos rodar ensure.context antes do cookie ser entregue (problema original).
+*/
+Route::middleware(['auth', 'ensure.context'])->group(function () {
+
+    /*
+    |--------------------------------------------------------------------------
+    | Rotas do Professor
+    |--------------------------------------------------------------------------
+    */
+    Route::prefix('professor')
+        ->middleware(['role:professor'])
+        ->name('professor.')
+        ->group(function () {
+
+            // Painel e perfil
+            Route::get('dashboard', [ProfessorDashboardController::class, 'index'])
+                ->name('dashboard');
+
+            // Ofertas
+            Route::prefix('ofertas')->name('ofertas.')->group(function () {
+                Route::get('/', [OfertaController::class, 'index'])->name('index');
+                Route::get('{oferta}/alunos', [OfertaController::class, 'alunos'])->name('alunos');
+                Route::post('{oferta}/alunos', [OfertaController::class, 'alunosPost'])->name('alunos.post');
+
+                // Ocorrências por oferta
+                Route::get('{oferta}/ocorrencias/create', [OcorrenciaController::class, 'create'])
+                    ->name('ocorrencias.create');
+                Route::post('ocorrencias/store', [OcorrenciaController::class, 'store'])
+                    ->name('ocorrencias.store');
+            });
+
+            // Ocorrências (rotas gerais)
+            Route::prefix('ocorrencias')->name('ocorrencias.')->group(function () {
+                Route::get('/', [OcorrenciaController::class, 'index'])->name('index');
+                Route::get('{id}', [OcorrenciaController::class, 'show'])->name('show');
+                Route::get('{id}/edit', [OcorrenciaController::class, 'edit'])->name('edit');
+                Route::put('{id}', [OcorrenciaController::class, 'update'])->name('update');
+                Route::delete('{id}', [OcorrenciaController::class, 'destroy'])->name('destroy');
+                Route::patch('{id}/status', [OcorrenciaController::class, 'updateStatus'])->name('updateStatus');
+
+                // Encaminhar / arquivar (somente diretor)
+                Route::get('{id}/encaminhar', [OcorrenciaController::class, 'encaminhar'])
+                    ->name('encaminhar');
+                Route::post('{id}/encaminhar', [OcorrenciaController::class, 'salvarEncaminhamento'])
+                    ->name('encaminhar.salvar');
+
+                // Histórico do aluno
+                Route::get('historico/{aluno}', [OcorrenciaController::class, 'historico'])
+                    ->name('historico');
+
+                // Histórico resumido (visual e PDF)
+                Route::get('historico-resumido/{aluno}', [OcorrenciaController::class, 'historicoResumido'])
+                    ->name('historico_resumido');
+                Route::get('pdf/{aluno}', [OcorrenciaController::class, 'gerarPdf'])
+                    ->name('pdf');
+            });
+            
+
+        });
 
 });
