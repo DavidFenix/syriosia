@@ -1,7 +1,23 @@
 README.debug.me
 
+----------------------------------------------------------
+Fase 3
+----------------------------------------------------------
+--Arquivos modificados
+	--app\Http\Controllers\DiagController.php
+		--use Illuminate\Support\Facades\Storage;
+		--criando a função storage() para o diagnóstico
+	--app\Providers\AppServiceProvider.php
+		--acrescentou-se mesmo boot() do syrios
+	--routes\web.php
+		--Route::get('/storage', [DiagController::class, 'storage'])->name('diag.storage');
 
+--Arquivos acrescentados
+	--resources\views\diag\storage.blade.php
 
+--Como testar
+	--.../syriosia/public/diag/storage
+	
 ----------------------------------------------------------
 Fase 2 :: sucesso  :: tudo funcionando do railway
 ----------------------------------------------------------

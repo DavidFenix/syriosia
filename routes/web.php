@@ -63,6 +63,9 @@ Route::middleware(['web'])->group(function () {
             return response('ok')->cookie('probe', '1', 0, null, null, true, true, false, 'None'); 
         });
 
+        Route::get('/storage', [DiagController::class, 'storage'])->name('diag.storage');
+
+
     }); 
 
     // ==================================================
@@ -209,7 +212,7 @@ Route::middleware(['auth', 'ensure.context'])->group(function () {
                 Route::get('pdf/{aluno}', [OcorrenciaController::class, 'gerarPdf'])
                     ->name('pdf');
             });
-            
+
 
         });
 

@@ -5,9 +5,65 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\Storage;
 
 class DiagController extends Controller
 {
+    public function storage()
+    {
+        $results = [
+            'symlink_exists' => false,
+            'symlink_points_to' => null,
+            'public_path_exists' => false,
+            'storage_path_exists' => false,
+            'write_test' => false,
+            'read_test' => false,
+            'delete_test' => false,
+            'disk_root' => null,
+            'errors' => [],
+        ];
+
+        try {
+            // Verifica se o symlink existe
+            $publicStorage = public_path('storage');
+            $results['symlink_exists'] = file_exists($publicStorage);
+            $results['public_path_exists'] = is_dir($publicStorage);
+
+            // Verifica aonde o symlink aponta
+            if ($results['symlink_exists']) {
+                $results['symlink_points_to'] = realpath($publicStorage);
+            }
+
+            // Verifica se storage/app/public existe
+            $results['storage_path_exists'] = is_dir(storage_path('app/public'));
+
+            // Usar Storage Laravel
+            $disk = Storage::disk('public');
+            $results['disk_root'] = $disk->path('');
+
+            // Testar escrita
+            $testFile = 'diag_test.txt';
+            $content = "Teste de escrita em " . now();
+
+            if ($disk->put($testFile, $content)) {
+                $results['write_test'] = true;
+
+                // Testar leitura
+                $read = $disk->get($testFile);
+                $results['read_test'] = ($read === $content);
+
+                // Testar delete
+                $results['delete_test'] = $disk->delete($testFile);
+            }
+
+        } catch (\Exception $e) {
+            $results['errors'][] = $e->getMessage();
+        }
+
+        return view('diag.storage', compact('results'));
+    }
+
+
     public function index(Request $request)
     {
         // -----------------------------------------------------
