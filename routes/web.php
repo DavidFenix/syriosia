@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Session;
+use Illuminate\Support\Facades\Artisan;
 use Symfony\Component\HttpFoundation\Cookie;
 
 // Auth
@@ -106,6 +107,12 @@ Route::middleware(['web'])->group(function () {
         return "Cache limpo!";
     });
 
+    Route::get('/kill-cookie', function () {
+        return response('Cookie removido')
+            ->cookie('syriosia_session', null, -1, '/', 'syriosia.up.railway.app', true, true, false, 'None')
+            ->cookie('XSRF-TOKEN', null, -1, '/', 'syriosia.up.railway.app', true, true, false, 'None');
+    });
+        
     // ==================================================
     // Bloco WAY (login fake)
     // ==================================================
