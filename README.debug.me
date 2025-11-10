@@ -1,6 +1,6 @@
 README.debug.me
 ----------------------------------------------------------
-Fase 6 :: Dockerfile Falhou...removê-lo
+Fase 6 :: Falha :: The PHP GD extension is required
 ----------------------------------------------------------
 --corrigindo o problema com as imagens
 	--permitir que o git envie as pastas com imagens e pdf
@@ -18,48 +18,7 @@ Fase 6 :: Dockerfile Falhou...removê-lo
 		!regimentos/
 		!regimentos/**
 --corrigindo erro The PHP GD extension is required, but is not installed.
-	--tem que usar Dockerfile
-	--criar syriosia\apache\laravel.conf
-		<VirtualHost *:8080>
-		    DocumentRoot /app/public
-
-		    <Directory /app/public>
-		        Options Indexes FollowSymLinks
-		        AllowOverride All
-		        Require all granted
-		    </Directory>
-
-		    ErrorLog /dev/stderr
-		    CustomLog /dev/stdout combined
-		</VirtualHost>
-
-	--vai instalar GD e ajustar a configuração para servir não em /var/www/html, mas em /app/public
-	--syriosia\Dockerfile
-		FROM php:8.1-apache
-
-		RUN apt-get update && apt-get install -y \
-		    libpng-dev libjpeg-dev libfreetype6-dev \
-		    && docker-php-ext-configure gd --with-freetype --with-jpeg \
-		    && docker-php-ext-install gd
-
-		RUN a2enmod rewrite
-		RUN docker-php-ext-install pdo pdo_mysql
-
-		WORKDIR /app
-		COPY . .
-
-		RUN chown -R www-data:www-data storage bootstrap/cache \
-		    && chmod -R 775 storage bootstrap/cache
-
-		COPY apache/laravel.conf /etc/apache2/sites-available/laravel.conf
-
-		RUN a2dissite 000-default.conf
-		RUN a2ensite laravel.conf
-
-		EXPOSE 8080
-
-		CMD ["apache2-foreground"]
-
+	--vamos tentar outro caminho pra não usar dockerfile
 
 ----------------------------------------------------------
 Fase 5 :: sucesso :: pdf criado no servidor railway
