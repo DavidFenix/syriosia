@@ -102,6 +102,20 @@ Route::middleware(['web'])->group(function () {
 
         Route::get('/pdf-diag', [DiagController::class, 'pdfDiag'])->name('diag.pdf.diag');
         Route::get('/pdf-download', [DiagController::class, 'pdfDownloadTest'])->name('diag.pdf.download');
+        Route::get('/raw-pdf', function () {
+            $content = "%PDF-1.4\nHello world\n%%EOF";
+            return response($content, 200)
+                ->header('Content-Type', 'application/pdf')
+                ->header('Content-Length', strlen($content));
+        });
+        Route::get('/diag/raw-binary', function () {
+            $binary = random_bytes(1024);
+            return response($binary)
+                ->header('Content-Type', 'application/octet-stream')
+                ->header('Content-Length', strlen($binary));
+        });
+
+
 
 
 
