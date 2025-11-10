@@ -108,12 +108,25 @@ Route::middleware(['web'])->group(function () {
                 ->header('Content-Type', 'application/pdf')
                 ->header('Content-Length', strlen($content));
         });
-        Route::get('/diag/raw-binary', function () {
+        Route::get('/raw-binary', function () {
             $binary = random_bytes(1024);
             return response($binary)
                 ->header('Content-Type', 'application/octet-stream')
                 ->header('Content-Length', strlen($binary));
         });
+        Route::get('/diag/raw-fixed', function () {
+            $content = "%PDF-1.4\nHello railway\n%%EOF";
+            @apache_setenv('no-gzip', '1');
+            header('Content-Encoding: none');
+            return response()->streamDownload(function () use ($content) {
+                echo $content;
+            }, 'raw-fixed.pdf', [
+                'Content-Type' => 'application/pdf',
+                'Content-Length' => strlen($content),
+                'Transfer-Encoding' => 'identity'
+            ]);
+        });
+
 
 
 
