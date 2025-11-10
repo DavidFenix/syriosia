@@ -51,6 +51,13 @@ Route::get('/', function () {
     return view('welcome');
 });
 
+//somente para testes, remova em produção
+Route::get('/kill-cookie', function () {
+    return response('Cookie removido')
+        ->cookie('syriosia_session', null, -1, '/', 'syriosia.up.railway.app', true, true, false, 'None')
+        ->cookie('XSRF-TOKEN', null, -1, '/', 'syriosia.up.railway.app', true, true, false, 'None');
+});
+
 //diagnóstivo fora do middleware mostrou que a sessão funciona
 Route::get('/diagini', [DiagController::class, 'indexini']);
 Route::get('/diagini/cookie-testini', [DiagController::class, 'cookieTestini']);
@@ -107,12 +114,6 @@ Route::middleware(['web'])->group(function () {
         return "Cache limpo!";
     });
 
-    Route::get('/kill-cookie', function () {
-        return response('Cookie removido')
-            ->cookie('syriosia_session', null, -1, '/', 'syriosia.up.railway.app', true, true, false, 'None')
-            ->cookie('XSRF-TOKEN', null, -1, '/', 'syriosia.up.railway.app', true, true, false, 'None');
-    });
-        
     // ==================================================
     // Bloco WAY (login fake)
     // ==================================================
