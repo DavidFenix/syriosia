@@ -236,9 +236,10 @@ class OcorrenciaController extends Controller
             $aluno->enturmacao()->with('turma')->first()
         )->turma;
 
-        // Para DomPDF, prefira caminho absoluto (public_path) ao invés de asset()
-        $arquivoFoto = 'storage/img-user/' . $aluno->matricula . '.png';
+        // Caminho absoluto para foto
+        $arquivoFoto  = 'storage/img-user/' . $aluno->matricula . '.png';
         $fotoAbsoluto = public_path($arquivoFoto);
+
         $fotoFinal = file_exists($fotoAbsoluto)
             ? $fotoAbsoluto
             : public_path('storage/img-user/padrao.png');
@@ -248,6 +249,7 @@ class OcorrenciaController extends Controller
             ->orderByDesc('created_at')
             ->get();
 
+        // Gera PDF normalmente
         $pdf = Pdf::loadView('professor.ocorrencias.pdf_historico', [
             'escola'      => $escola,
             'aluno'       => $aluno,
@@ -256,8 +258,48 @@ class OcorrenciaController extends Controller
             'fotoFinal'   => $fotoFinal,
         ])->setPaper('a4');
 
-        return $pdf->download('historico_ocorrencias_'.$aluno->matricula.'.pdf');
+        // ✅ Conteúdo bruto do PDF
+        $content = $pdf->output();
+
+        // ✅ Nome limpo
+        $filename = 'historico_ocorrencias_'.$aluno->matricula.'.pdf';
+
+        // ✅ Download universal (Railway + Apache + Nginx)
+        return pdf_download($filename, $content);
     }
+
+    // public function gerarPdf($alunoId)
+    // {
+    //     $aluno  = Aluno::findOrFail($alunoId);
+    //     $escola = Escola::find(session('current_school_id'));
+
+    //     // Turma atual via enturmacao -> turma (primeira encontrada)
+    //     $turma = optional(
+    //         $aluno->enturmacao()->with('turma')->first()
+    //     )->turma;
+
+    //     // Para DomPDF, prefira caminho absoluto (public_path) ao invés de asset()
+    //     $arquivoFoto = 'storage/img-user/' . $aluno->matricula . '.png';
+    //     $fotoAbsoluto = public_path($arquivoFoto);
+    //     $fotoFinal = file_exists($fotoAbsoluto)
+    //         ? $fotoAbsoluto
+    //         : public_path('storage/img-user/padrao.png');
+
+    //     $ocorrencias = Ocorrencia::with(['motivos', 'oferta.disciplina', 'professor.usuario'])
+    //         ->where('aluno_id', $aluno->id)
+    //         ->orderByDesc('created_at')
+    //         ->get();
+
+    //     $pdf = Pdf::loadView('professor.ocorrencias.pdf_historico', [
+    //         'escola'      => $escola,
+    //         'aluno'       => $aluno,
+    //         'turma'       => $turma,
+    //         'ocorrencias' => $ocorrencias,
+    //         'fotoFinal'   => $fotoFinal,
+    //     ])->setPaper('a4');
+
+    //     return $pdf->download('historico_ocorrencias_'.$aluno->matricula.'.pdf');
+    // }
 
     public function historicoResumido($alunoId)
     {
