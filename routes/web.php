@@ -10,7 +10,32 @@ use Symfony\Component\HttpFoundation\Cookie;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\DiagController;
 
+// Master
+use App\Http\Controllers\Master\EscolaController as MasterEscolaController;
+use App\Http\Controllers\Master\RoleController as MasterRoleController;
+use App\Http\Controllers\Master\UsuarioController as MasterUsuarioController;
+use App\Http\Controllers\Master\DashboardController as MasterDashboardController;
+use App\Http\Controllers\Master\ImagemController;
+
+// Secretaria
+use App\Http\Controllers\Secretaria\EscolaController as SecretariaEscolaController;
+use App\Http\Controllers\Secretaria\UsuarioController as SecretariaUsuarioController;
+
+// Escola
+use App\Http\Controllers\Escola\AlunoController;
+use App\Http\Controllers\Escola\DashboardController;
+use App\Http\Controllers\Escola\DisciplinaController;
 use App\Http\Controllers\Escola\ProfessorController;
+use App\Http\Controllers\Escola\TurmaController;
+use App\Http\Controllers\Escola\UsuarioController as EscolaUsuarioController;
+use App\Http\Controllers\Escola\RegimentoController;
+use App\Http\Controllers\Escola\ModeloMotivoController;
+use App\Http\Controllers\Escola\AlunoFotoController;
+use App\Http\Controllers\Escola\AlunoFotoLoteController;
+use App\Http\Controllers\Escola\EnturmacaoController;
+use App\Http\Controllers\Escola\LotacaoController;
+use App\Http\Controllers\Escola\DiretorTurmaController;
+use App\Http\Controllers\Escola\IdentidadeController;
 
 // Professor
 use App\Http\Controllers\Professor\{
@@ -25,8 +50,6 @@ Route::get('/', function () {
     return view('welcome');
 });
 
-
-
 //diagnóstivo fora do middleware mostrou que a sessão funciona
 Route::get('/diagini', [DiagController::class, 'indexini']);
 Route::get('/diagini/cookie-testini', [DiagController::class, 'cookieTestini']);
@@ -40,6 +63,10 @@ Route::middleware(['web'])->group(function () {
     Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
     Route::post('/login', [LoginController::class, 'login']);
     Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
+
+    // Regimento público
+    Route::get('regimento/{school}', [RegimentoController::class, 'visualizar'])
+        ->name('regimento.visualizar');
 
     // Login temporário (placeholder)
     //Route::get('/login', fn() => 'Tela de login')->name('login');
@@ -162,6 +189,153 @@ Route::middleware(['auth', 'ensure.context'])->group(function () {
 
     /*
     |--------------------------------------------------------------------------
+    | Rotas do Master
+    |--------------------------------------------------------------------------
+    */
+    Route::prefix('master')
+        ->middleware(['role:master'])
+        ->name('master.')
+        ->group(function () {
+            Route::get('dashboard', [MasterDashboardController::class, 'index'])->name('dashboard');
+            Route::get('/', fn () => redirect()->route('master.dashboard'));
+
+            Route::resource('escolas', MasterEscolaController::class)->except(['show']);
+            Route::get('escolas/{escola}/detalhes', [MasterEscolaController::class, 'detalhes'])
+                ->name('escolas.detalhes');
+
+            Route::resource('roles', MasterRoleController::class)->only(['index']);
+            Route::resource('usuarios', MasterUsuarioController::class);
+
+            // Associações Escola Mãe ↔ Escola Filha
+            Route::get('associacoes', [MasterEscolaController::class, 'associacoes'])->name('escolas.associacoes');
+            Route::post('associacoes', [MasterEscolaController::class, 'associarFilha'])->name('escolas.associar');
+
+            Route::post('usuarios/{usuario}/vincular', [MasterUsuarioController::class, 'vincular'])
+                ->name('usuarios.vincular');
+
+            // Gestão de roles específicas por usuario
+            Route::get('usuarios/{usuario}/roles', [MasterUsuarioController::class, 'editRoles'])
+                ->name('usuarios.roles.edit');
+            Route::post('usuarios/{usuario}/roles', [MasterUsuarioController::class, 'updateRoles'])
+                ->name('usuarios.roles.update');
+
+            // Confirmação/Exclusão
+            Route::get('usuarios/{usuario}/confirm-destroy', [MasterUsuarioController::class, 'confirmDestroy'])
+                ->name('usuarios.confirmDestroy');
+            Route::delete('usuarios/{usuario}', [MasterUsuarioController::class, 'destroy'])
+                ->name('usuarios.destroy');
+
+            // Imagens
+            Route::get('imagens', [ImagemController::class, 'index'])->name('imagens.index');
+            Route::post('imagens/limpar', [ImagemController::class, 'limpar'])->name('imagens.limpar');
+    });
+
+    /*
+    |--------------------------------------------------------------------------
+    | Rotas da Secretaria
+    |--------------------------------------------------------------------------
+    */
+    Route::prefix('secretaria')
+        ->middleware(['role:secretaria'])
+        ->name('secretaria.')
+        ->group(function () {
+            Route::get('/', fn () => redirect()->route('secretaria.escolas.index'))->name('dashboard');
+
+            Route::resource('escolas', SecretariaEscolaController::class)->except(['show']);
+            Route::resource('usuarios', SecretariaUsuarioController::class)->except(['show']);
+
+            Route::post('usuarios/{usuario}/vincular', [SecretariaUsuarioController::class, 'vincular'])
+                ->name('usuarios.vincular');
+
+            Route::get('usuarios/{usuario}/roles', [SecretariaUsuarioController::class, 'editRoles'])
+                ->name('usuarios.roles.edit');
+            Route::post('usuarios/{usuario}/roles', [SecretariaUsuarioController::class, 'updateRoles'])
+                ->name('usuarios.roles.update');
+    });
+
+    /*
+    |--------------------------------------------------------------------------
+    | Rotas da Escola
+    |--------------------------------------------------------------------------
+    */
+    Route::prefix('escola')
+        ->middleware(['role:escola'])
+        ->name('escola.')
+        ->group(function () {
+            Route::get('/', fn () => redirect()->route('escola.dashboard'));
+            Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard');
+
+            // Usuários (professores, pais, etc.)
+            Route::resource('usuarios', EscolaUsuarioController::class)->except(['show']);
+            Route::post('usuarios/{usuario}/vincular', [EscolaUsuarioController::class, 'vincular'])->name('usuarios.vincular');
+
+            // Professores
+            Route::resource('professores', ProfessorController::class)->except(['show']);
+
+            // Disciplinas
+            Route::resource('disciplinas', DisciplinaController::class)->except(['show']);
+
+            // Turmas
+            Route::resource('turmas', TurmaController::class)->except(['show']);
+
+            // Alunos
+            Route::resource('alunos', AlunoController::class)->except(['show']);
+
+            // Roles por usuário da Escola
+            Route::get('usuarios/{usuario}/roles', [EscolaUsuarioController::class, 'editRoles'])
+                ->name('usuarios.roles.edit');
+            Route::post('usuarios/{usuario}/roles', [EscolaUsuarioController::class, 'updateRoles'])
+                ->name('usuarios.roles.update');
+
+            // Vincular aluno existente à escola atual
+            Route::post('alunos/{aluno}/vincular', [AlunoController::class, 'vincular'])
+                ->name('alunos.vincular');
+
+            // Enturmações (vínculos aluno–turma)
+            Route::resource('enturmacao', EnturmacaoController::class)->except(['show']);
+            Route::post('enturmacao/storeBatch', [EnturmacaoController::class, 'storeBatch'])
+                ->name('enturmacao.storeBatch');
+
+            // Lotação
+            Route::resource('lotacao', LotacaoController::class)->except(['show']);
+            Route::prefix('lotacao')->name('lotacao.')->group(function () {
+                Route::get('diretor_turma', [DiretorTurmaController::class, 'index'])
+                    ->name('diretor_turma.index');
+                Route::post('diretor_turma/update', [DiretorTurmaController::class, 'update'])
+                    ->name('diretor_turma.update');
+                Route::delete('diretor_turma/{id}', [DiretorTurmaController::class, 'destroy'])
+                    ->name('diretor_turma.destroy');
+            });
+
+            // Identidade visual
+            Route::get('identidade', [IdentidadeController::class, 'edit'])
+                ->name('identidade.edit');
+            Route::post('identidade', [IdentidadeController::class, 'update'])
+                ->name('identidade.update');
+
+            // Regimento (painel da escola)
+            Route::get('regimento', [RegimentoController::class, 'index'])->name('regimento.index');
+            Route::post('regimento', [RegimentoController::class, 'update'])->name('regimento.update');
+
+            // Motivos de Ocorrência
+            Route::resource('motivos', ModeloMotivoController::class)->except(['show']);
+            // Importar motivos de outras escolas
+            Route::get('motivos/importar', [ModeloMotivoController::class, 'importar'])
+                ->name('motivos.importar');
+            Route::post('motivos/importar', [ModeloMotivoController::class, 'importarSalvar'])
+                ->name('motivos.importar.salvar');
+
+            // Uploads de fotos
+            Route::get('alunos/{aluno}/foto', [AlunoFotoController::class, 'edit'])->name('alunos.foto.edit');
+            Route::post('alunos/{aluno}/foto', [AlunoFotoController::class, 'update'])->name('alunos.foto.update');
+
+            Route::get('alunos/fotos-lote', [AlunoFotoLoteController::class, 'index'])->name('alunos.fotos.lote');
+            Route::post('alunos/fotos-lote', [AlunoFotoLoteController::class, 'store'])->name('alunos.fotos.lote.store');
+    });
+
+
+    /*
+    |--------------------------------------------------------------------------
     | Rotas do Professor
     |--------------------------------------------------------------------------
     */
@@ -213,7 +387,13 @@ Route::middleware(['auth', 'ensure.context'])->group(function () {
                     ->name('pdf');
             });
 
+            // Rota pública sob /professor (mantida como no original)
+            Route::get('regimento/{school}', [RegimentoController::class, 'visualizar'])
+                ->name('regimento.visualizar');
 
-        });
+            // Relatórios
+            Route::get('relatorios', [RelatorioController::class, 'index'])
+                ->name('relatorios.index');
+    });
 
 });
