@@ -1,2 +1,12 @@
 *
 !.gitignore
+
+# Permitir pastas específicas
+!img-user/
+!img-user/**
+
+!logos/
+!logos/**
+
+!regimentos/
+!regimentos/**

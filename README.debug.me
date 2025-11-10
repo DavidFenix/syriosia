@@ -1,7 +1,25 @@
 README.debug.me
+----------------------------------------------------------
+Fase 6 ::
+----------------------------------------------------------
+--corrigindo o problema com as imagens
+	--permitir que o git envie as pastas com imagens e pdf
+		--img-user
+		--logos
+		--regimentos
+	--alteração do arquivo storage/app/public/.gitignore
+		# Permitir pastas específicas
+		!img-user/
+		!img-user/**
+
+		!logos/
+		!logos/**
+
+		!regimentos/
+		!regimentos/**
 
 ----------------------------------------------------------
-Fase 5 
+Fase 5 :: sucesso :: pdf criado no servidor railway
 ----------------------------------------------------------
 --adicionar rotas de debug para pdf que vem com 0 byte
 	--Route::get('/pdf-diag', [DiagController::class, 'pdfDiag'])->name('diag.pdf.diag');
@@ -9,6 +27,11 @@ Fase 5
     --alteração do DiagController.php para acrescentar as funções
     	--pdfDiag()
     	--pdfDownloadTest()
+--corrigindo download de pdf no railway
+	--adicionamos app\Helpers\pdf_download.php
+	--alteramos o composer.json
+		--"app/Helpers/pdf_download.php"
+	--rodamos composer dump-autoload
 
 
 ----------------------------------------------------------
