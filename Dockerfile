@@ -1,23 +1,23 @@
 FROM php:8.1-apache
 
-# Instalar GD (PNG, JPG, Freetype)
 RUN apt-get update && apt-get install -y \
     libpng-dev libjpeg-dev libfreetype6-dev \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
     && docker-php-ext-install gd
 
-# Define o diretório da aplicação
-WORKDIR /app
+RUN a2enmod rewrite
+RUN docker-php-ext-install pdo pdo_mysql
 
-# Copia tudo
+WORKDIR /app
 COPY . .
 
-# Permissões básicas
 RUN chown -R www-data:www-data storage bootstrap/cache \
     && chmod -R 775 storage bootstrap/cache
 
-# Configurar o Apache para servir public/
-RUN sed -i 's/\/var\/www\/html/\/app\/public/' /etc/apache2/sites-available/000-default.conf
+COPY apache/laravel.conf /etc/apache2/sites-available/laravel.conf
+
+RUN a2dissite 000-default.conf
+RUN a2ensite laravel.conf
 
 EXPOSE 8080
 
