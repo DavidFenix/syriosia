@@ -114,18 +114,27 @@ Route::middleware(['web'])->group(function () {
                 ->header('Content-Type', 'application/octet-stream')
                 ->header('Content-Length', strlen($binary));
         });
-        Route::get('/diag/raw-fixed', function () {
+        Route::get('/raw-fixed', function () {
             $content = "%PDF-1.4\nHello railway\n%%EOF";
-            @apache_setenv('no-gzip', '1');
-            header('Content-Encoding: none');
-            return response()->streamDownload(function () use ($content) {
-                echo $content;
-            }, 'raw-fixed.pdf', [
-                'Content-Type' => 'application/pdf',
-                'Content-Length' => strlen($content),
-                'Transfer-Encoding' => 'identity'
-            ]);
+            // DESATIVA COMPACTAÇÃO E BUFFER EM QUALQUER SERVIDOR
+            ini_set('zlib.output_compression', '0');
+            ini_set('output_buffering', 'off');
+            return response()->streamDownload(
+                function () use ($content) {
+                    echo $content;
+                    flush();  // força saída imediata
+                },
+                'raw-fixed.pdf',
+                [
+                    'Content-Type' => 'application/pdf',
+                    'Content-Length' => strlen($content),
+                    'Content-Encoding' => 'none',
+                    'Cache-Control' => 'private, no-transform',
+                    'Transfer-Encoding' => 'identity'
+                ]
+            );
         });
+
 
 
 
