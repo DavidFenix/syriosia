@@ -7,8 +7,135 @@ use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Storage;
 
+use Illuminate\Support\Facades\Log;
+use Illuminate\Http\Response;
+
 class DiagController extends Controller
 {
+    
+    //diagnóstico pdf
+    public function pdfDiag()
+    {
+        $result = [
+            'time' => now()->toDateTimeString(),
+            'vendor_autoload' => file_exists(base_path('vendor/autoload.php')),
+            'classes' => [
+                'Barryvdh\\DomPDF\\Facade\\Pdf' => class_exists(\Barryvdh\DomPDF\Facade\Pdf::class) ?? false,
+                'Dompdf\\Dompdf' => class_exists(\Dompdf\Dompdf::class) ?? false,
+            ],
+            'php_settings' => [
+                'memory_limit' => ini_get('memory_limit'),
+                'output_buffering' => ini_get('output_buffering'),
+                'upload_tmp_dir' => ini_get('upload_tmp_dir'),
+                'sys_temp_dir' => sys_get_temp_dir(),
+            ],
+            'storage_writable' => is_writable(storage_path('app')) && is_writable(storage_path('app/public')),
+            'attempts' => [],
+        ];
+
+        // HTML de teste minimal
+        $html = '<h1>PDF Test</h1><p>Gerado em ' . now()->toDateTimeString() . '</p>';
+
+        // 1) Teste com facade Barryvdh (se existir)
+        try {
+            if (class_exists(\Barryvdh\DomPDF\Facade\Pdf::class)) {
+                $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadHTML($html);
+                $bytes = $pdf->output();
+                $path = 'diag/pdf_facade_test_' . time() . '.pdf';
+                Storage::put($path, $bytes);
+                $result['attempts']['facade'] = [
+                    'ok' => true,
+                    'file' => $path,
+                    'filesize' => Storage::size($path),
+                ];
+            } else {
+                $result['attempts']['facade'] = ['ok' => false, 'error' => 'class not found'];
+            }
+        } catch (\Throwable $e) {
+            $result['attempts']['facade'] = ['ok' => false, 'exception' => $e->getMessage()];
+            Log::error('pdfDiag facade error: '.$e->getMessage());
+        }
+
+        // 2) Teste com Dompdf direto
+        try {
+            if (class_exists(\Dompdf\Dompdf::class)) {
+                $dompdf = new \Dompdf\Dompdf([
+                    'isRemoteEnabled' => true,
+                    'isHtml5ParserEnabled' => true,
+                ]);
+                $dompdf->loadHtml($html);
+                $dompdf->setPaper('A4', 'portrait');
+                $dompdf->render();
+                $bytes2 = $dompdf->output();
+                $path2 = 'diag/pdf_dompdf_test_' . time() . '.pdf';
+                Storage::put($path2, $bytes2);
+                $result['attempts']['dompdf'] = [
+                    'ok' => true,
+                    'file' => $path2,
+                    'filesize' => Storage::size($path2),
+                    'warnings' => method_exists($dompdf, 'getWarnings') ? $dompdf->getWarnings() : null,
+                ];
+            } else {
+                $result['attempts']['dompdf'] = ['ok' => false, 'error' => 'class not found'];
+            }
+        } catch (\Throwable $e) {
+            $result['attempts']['dompdf'] = ['ok' => false, 'exception' => $e->getMessage()];
+            Log::error('pdfDiag dompdf error: '.$e->getMessage());
+        }
+
+        // 3) Teste de streaming direto (simula controller que retorna o PDF)
+        try {
+            if (isset($bytes) && strlen($bytes) > 0) {
+                // cria um arquivo e devolve headers para download
+                $streamPath = storage_path('app/diag/pdf_stream_test_' . time() . '.pdf');
+                file_put_contents($streamPath, $bytes);
+                $result['attempts']['stream_file'] = [
+                    'ok' => true,
+                    'path' => $streamPath,
+                    'filesize' => filesize($streamPath),
+                ];
+            } else {
+                $result['attempts']['stream_file'] = ['ok' => false, 'error' => 'no bytes from previous attempts'];
+            }
+        } catch (\Throwable $e) {
+            $result['attempts']['stream_file'] = ['ok' => false, 'exception' => $e->getMessage()];
+            Log::error('pdfDiag stream error: '.$e->getMessage());
+        }
+
+        return response()->json($result);
+    }
+
+    //diagnóstico pdf
+    public function pdfDownloadTest()
+    {
+        // gera um PDF simples e retorna como download (ou erro detalhado)
+        $html = '<h1>PDF Download Test</h1><p>' . now()->toDateTimeString() . '</p>';
+
+        try {
+            if (class_exists(\Barryvdh\DomPDF\Facade\Pdf::class)) {
+                $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadHTML($html);
+                return $pdf->download('diag_download_test.pdf');
+            } elseif (class_exists(\Dompdf\Dompdf::class)) {
+                $dompdf = new \Dompdf\Dompdf(['isRemoteEnabled' => true]);
+                $dompdf->loadHtml($html);
+                $dompdf->setPaper('A4', 'portrait');
+                $dompdf->render();
+                $out = $dompdf->output();
+                return response($out, 200, [
+                    'Content-Type' => 'application/pdf',
+                    'Content-Disposition' => 'attachment; filename="diag_download_test.pdf"',
+                    'Content-Length' => strlen($out),
+                ]);
+            } else {
+                return response()->json(['error' => 'Nenhuma biblioteca de PDF encontrada'], 500);
+            }
+        } catch (\Throwable $e) {
+            Log::error('pdfDownloadTest error: '.$e->getMessage());
+            return response()->json(['exception' => $e->getMessage()], 500);
+        }
+    }
+
+    //diagnóstico storage
     public function storage()
     {
         $results = [
@@ -63,7 +190,7 @@ class DiagController extends Controller
         return view('diag.storage', compact('results'));
     }
 
-
+    //diagnóstico cookie e sessão
     public function index(Request $request)
     {
         // -----------------------------------------------------

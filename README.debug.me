@@ -1,6 +1,14 @@
 README.debug.me
 
-
+----------------------------------------------------------
+Fase 5 
+----------------------------------------------------------
+--adicionar rotas de debug para pdf que vem com 0 byte
+	--Route::get('/pdf-diag', [DiagController::class, 'pdfDiag'])->name('diag.pdf.diag');
+    --Route::get('/pdf-download', [DiagController::class, 'pdfDownloadTest'])->name('diag.pdf.download');
+    --alteração do DiagController.php para acrescentar as funções
+    	--pdfDiag()
+    	--pdfDownloadTest()
 
 
 ----------------------------------------------------------

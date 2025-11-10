@@ -100,6 +100,10 @@ Route::middleware(['web'])->group(function () {
 
         Route::get('/storage', [DiagController::class, 'storage'])->name('diag.storage');
 
+        Route::get('/pdf-diag', [DiagController::class, 'pdfDiag'])->name('diag.pdf.diag');
+        Route::get('/pdf-download', [DiagController::class, 'pdfDownloadTest'])->name('diag.pdf.download');
+
+
 
     }); 
 
