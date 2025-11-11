@@ -65,104 +65,104 @@ if (!function_exists('dashboard_route')) {
  * Converte uma imagem local em Base64 para uso seguro no DomPDF.
  */
 // function img_to_base64($localPath)
-// {
-//     if (!file_exists($localPath) || !is_readable($localPath)) {
-//         return null; // fallback será tratado no Blade
-//     }
+    // {
+    //     if (!file_exists($localPath) || !is_readable($localPath)) {
+    //         return null; // fallback será tratado no Blade
+    //     }
 
-//     $mime = mime_content_type($localPath);
-//     $data = base64_encode(file_get_contents($localPath));
+    //     $mime = mime_content_type($localPath);
+    //     $data = base64_encode(file_get_contents($localPath));
 
-//     return "data:$mime;base64,$data";
-// }
+    //     return "data:$mime;base64,$data";
+    // }
 
-// function img_to_svg_base64($path, $width = 80, $height = 80)
-// {
-//     if (!file_exists($path)) {
-//         return null;
-//     }
+    // function img_to_svg_base64($path, $width = 80, $height = 80)
+    // {
+    //     if (!file_exists($path)) {
+    //         return null;
+    //     }
 
-//     $data = base64_encode(file_get_contents($path));
-//     $mime = mime_content_type($path);
+    //     $data = base64_encode(file_get_contents($path));
+    //     $mime = mime_content_type($path);
 
-//     return "
-//         <svg width='{$width}' height='{$height}' xmlns='http://www.w3.org/2000/svg'>
-//             <image href='data:{$mime};base64,{$data}' width='{$width}' height='{$height}' />
-//         </svg>
-//     ";
-// }
+    //     return "
+    //         <svg width='{$width}' height='{$height}' xmlns='http://www.w3.org/2000/svg'>
+    //             <image href='data:{$mime};base64,{$data}' width='{$width}' height='{$height}' />
+    //         </svg>
+    //     ";
+    // }
 
 
-// function safe_image_base64($path)
-// {
-//     try {
-//         if (!file_exists($path)) {
-//             return null;
-//         }
+    // function safe_image_base64($path)
+    // {
+    //     try {
+    //         if (!file_exists($path)) {
+    //             return null;
+    //         }
 
-//         // Carrega imagem PNG, JPG OU WEBP
-//         $img = imagecreatefromstring(file_get_contents($path));
-//         if (!$img) {
-//             return null;
-//         }
+    //         // Carrega imagem PNG, JPG OU WEBP
+    //         $img = imagecreatefromstring(file_get_contents($path));
+    //         if (!$img) {
+    //             return null;
+    //         }
 
-//         // Converte para JPG em buffer
-//         ob_start();
-//         imagejpeg($img, null, 90); // gera JPG limpo
-//         $jpgData = ob_get_clean();
+    //         // Converte para JPG em buffer
+    //         ob_start();
+    //         imagejpeg($img, null, 90); // gera JPG limpo
+    //         $jpgData = ob_get_clean();
 
-//         imagedestroy($img);
+    //         imagedestroy($img);
 
-//         if (!$jpgData) {
-//             return null;
-//         }
+    //         if (!$jpgData) {
+    //             return null;
+    //         }
 
-//         // Base64 com MIME correto
-//         $base64 = base64_encode($jpgData);
-//         return 'data:image/jpeg;base64,' . $base64;
+    //         // Base64 com MIME correto
+    //         $base64 = base64_encode($jpgData);
+    //         return 'data:image/jpeg;base64,' . $base64;
 
-//     } catch (\Throwable $e) {
-//         return null;
-//     }
-// }
+    //     } catch (\Throwable $e) {
+    //         return null;
+    //     }
+    // }
 
-// function safe_image_base64($path)
-// {
-//     if (!file_exists($path)) {
-//         return null;
-//     }
+    // function safe_image_base64($path)
+    // {
+    //     if (!file_exists($path)) {
+    //         return null;
+    //     }
 
-//     try {
-//         $imgData = file_get_contents($path);
-//         $info = getimagesize($path);
+    //     try {
+    //         $imgData = file_get_contents($path);
+    //         $info = getimagesize($path);
 
-//         // Se for PNG e potencialmente problemático, converter
-//         if ($info && $info['mime'] === 'image/png') {
+    //         // Se for PNG e potencialmente problemático, converter
+    //         if ($info && $info['mime'] === 'image/png') {
 
-//             // Cria imagem a partir do PNG
-//             $image = imagecreatefrompng($path);
-//             if (!$image) return null;
+    //             // Cria imagem a partir do PNG
+    //             $image = imagecreatefrompng($path);
+    //             if (!$image) return null;
 
-//             // Remove transparência (fundo branco)
-//             $bg = imagecreatetruecolor(imagesx($image), imagesy($image));
-//             $white = imagecolorallocate($bg, 255, 255, 255);
-//             imagefill($bg, 0, 0, $white);
-//             imagecopy($bg, $image, 0, 0, 0, 0, imagesx($image), imagesy($image));
+    //             // Remove transparência (fundo branco)
+    //             $bg = imagecreatetruecolor(imagesx($image), imagesy($image));
+    //             $white = imagecolorallocate($bg, 255, 255, 255);
+    //             imagefill($bg, 0, 0, $white);
+    //             imagecopy($bg, $image, 0, 0, 0, 0, imagesx($image), imagesy($image));
 
-//             // Converte para JPG em memória
-//             ob_start();
-//             imagejpeg($bg, null, 92);
-//             $jpgData = ob_get_clean();
+    //             // Converte para JPG em memória
+    //             ob_start();
+    //             imagejpeg($bg, null, 92);
+    //             $jpgData = ob_get_clean();
 
-//             return 'data:image/jpeg;base64,' . base64_encode($jpgData);
-//         }
+    //             return 'data:image/jpeg;base64,' . base64_encode($jpgData);
+    //         }
 
-//         // Outros formatos OK
-//         return 'data:' . $info['mime'] . ';base64,' . base64_encode($imgData);
+    //         // Outros formatos OK
+    //         return 'data:' . $info['mime'] . ';base64,' . base64_encode($imgData);
 
-//     } catch (\Throwable $e) {
-//         return null;
-//     }
+    //     } catch (\Throwable $e) {
+    //         return null;
+    //     }
 // }
 
 
