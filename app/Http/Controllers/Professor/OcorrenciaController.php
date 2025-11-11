@@ -227,101 +227,99 @@ class OcorrenciaController extends Controller
      * Gera PDF do histórico do aluno (versão resumida/bonita).
      */
     public function gerarPdf($alunoId)
-{
-    $aluno  = Aluno::findOrFail($alunoId);
-    $escola = Escola::find(session('current_school_id'));
+    {
+        $aluno  = Aluno::findOrFail($alunoId);
+        $escola = Escola::find(session('current_school_id'));
 
-    // Turma
-    $turma = optional(
-        $aluno->enturmacao()->with('turma')->first()
-    )->turma;
+        // Turma
+        $turma = optional(
+            $aluno->enturmacao()->with('turma')->first()
+        )->turma;
 
-    /*
-    |--------------------------------------------------------------------------
-    | 1. LOGO DA ESCOLA — detectando PNG/JPG automaticamente
-    |--------------------------------------------------------------------------
-    */
-    $logoBase = public_path("storage/logos/");
-    $logoName = $escola->logo_path ?? '';
+        /*
+        |--------------------------------------------------------------------------
+        | 1. LOGO DA ESCOLA — detectando PNG/JPG automaticamente
+        |--------------------------------------------------------------------------
+        */
+        $logoBase = public_path("storage/logos/");
+        $logoName = $escola->logo_path ?? '';
 
-    $possiveisExt = [
-        $logoName,
-        pathinfo($logoName, PATHINFO_FILENAME).'.jpg',
-        pathinfo($logoName, PATHINFO_FILENAME).'.jpeg',
-        pathinfo($logoName, PATHINFO_FILENAME).'.png',
-    ];
+        $possiveisExt = [
+            $logoName,
+            pathinfo($logoName, PATHINFO_FILENAME).'.jpg',
+            pathinfo($logoName, PATHINFO_FILENAME).'.jpeg',
+            pathinfo($logoName, PATHINFO_FILENAME).'.png',
+        ];
 
-    $logoFile = null;
+        $logoFile = null;
 
-    foreach ($possiveisExt as $f) {
-        if ($f && file_exists($logoBase.$f)) {
-            $logoFile = $logoBase.$f;
-            break;
+        foreach ($possiveisExt as $f) {
+            if ($f && file_exists($logoBase.$f)) {
+                $logoFile = $logoBase.$f;
+                break;
+            }
         }
-    }
 
-    if (!$logoFile) {
-        $logoFile = $logoBase.'padrao.jpg'; // mantenha em JPG
-    }
-
-    /*
-    |--------------------------------------------------------------------------
-    | 2. FOTO DO ALUNO — idem
-    |--------------------------------------------------------------------------
-    */
-    $fotoBase = public_path("storage/img-user/");
-    $mat = $aluno->matricula;
-
-    $possiveisFotos = [
-        "{$mat}.jpg",
-        "{$mat}.jpeg",
-        "{$mat}.png",
-    ];
-
-    $fotoFile = null;
-
-    foreach ($possiveisFotos as $f) {
-        if (file_exists($fotoBase.$f)) {
-            $fotoFile = $fotoBase.$f;
-            break;
+        if (!$logoFile) {
+            $logoFile = $logoBase.'padrao.jpg'; // mantenha em JPG
         }
+
+        /*
+        |--------------------------------------------------------------------------
+        | 2. FOTO DO ALUNO — idem
+        |--------------------------------------------------------------------------
+        */
+        $fotoBase = public_path("storage/img-user/");
+        $mat = $aluno->matricula;
+
+        $possiveisFotos = [
+            "{$mat}.jpg",
+            "{$mat}.jpeg",
+            "{$mat}.png",
+        ];
+
+        $fotoFile = null;
+
+        foreach ($possiveisFotos as $f) {
+            if (file_exists($fotoBase.$f)) {
+                $fotoFile = $fotoBase.$f;
+                break;
+            }
+        }
+
+        if (!$fotoFile) {
+            $fotoFile = $fotoBase.'padrao.jpg';
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Ocorrências
+        |--------------------------------------------------------------------------
+        */
+        $ocorrencias = Ocorrencia::with(['motivos', 'oferta.disciplina', 'professor.usuario'])
+            ->where('aluno_id', $aluno->id)
+            ->orderByDesc('created_at')
+            ->get();
+
+        /*
+        |--------------------------------------------------------------------------
+        | PDF
+        |--------------------------------------------------------------------------
+        */
+        $pdf = Pdf::loadView('professor.ocorrencias.pdf_historico', [
+            'aluno'      => $aluno,
+            'escola'     => $escola,
+            'turma'      => $turma,
+            'ocorrencias'=> $ocorrencias,
+            'logoFile'   => "file://".$logoFile,
+            'fotoFile'   => "file://".$fotoFile,
+        ])->setPaper('a4');
+
+        $content  = $pdf->output();
+        $filename = "historico_ocorrencias_{$aluno->matricula}.pdf";
+
+        return pdf_download($filename, $content);
     }
-
-    if (!$fotoFile) {
-        $fotoFile = $fotoBase.'padrao.jpg';
-    }
-
-    /*
-    |--------------------------------------------------------------------------
-    | Ocorrências
-    |--------------------------------------------------------------------------
-    */
-    $ocorrencias = Ocorrencia::with(['motivos', 'oferta.disciplina', 'professor.usuario'])
-        ->where('aluno_id', $aluno->id)
-        ->orderByDesc('created_at')
-        ->get();
-
-    /*
-    |--------------------------------------------------------------------------
-    | PDF
-    |--------------------------------------------------------------------------
-    */
-    $pdf = Pdf::loadView('professor.ocorrencias.pdf_historico', [
-        'aluno'      => $aluno,
-        'escola'     => $escola,
-        'turma'      => $turma,
-        'ocorrencias'=> $ocorrencias,
-        'logoFile'   => "file://".$logoFile,
-        'fotoFile'   => "file://".$fotoFile,
-    ])->setPaper('a4');
-
-    $content  = $pdf->output();
-    $filename = "historico_ocorrencias_{$aluno->matricula}.pdf";
-
-    return pdf_download($filename, $content);
-}
-
-
 
     // public function gerarPdf($alunoId)
     // {
