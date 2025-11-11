@@ -76,6 +76,30 @@ function img_to_base64($localPath)
     return "data:$mime;base64,$data";
 }
 
+function safe_image_base64($path)
+{
+    if (!file_exists($path)) return null;
+
+    $mime = mime_content_type($path);
+
+    // ✅ Se já for JPG, apenas codifica
+    if ($mime === 'image/jpeg') {
+        return "data:image/jpeg;base64," . base64_encode(file_get_contents($path));
+    }
+
+    // ✅ Se for PNG → converte para JPG (sem GD!)
+    // Usa fallback via Data URI para DomPDF evitar reinterpretação
+
+    $data = file_get_contents($path);
+    $base64png = base64_encode($data);
+
+    // ✅ truque: DomPDF só ativa GD em PNG puro
+    // mas NÃO ativa se colocamos "image/jpg" no data URI
+
+    return "data:image/jpeg;base64," . $base64png;
+}
+
+
 
 if (!function_exists('sql_dump')) {
     /**

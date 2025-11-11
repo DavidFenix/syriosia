@@ -231,55 +231,101 @@ class OcorrenciaController extends Controller
         $aluno  = Aluno::findOrFail($alunoId);
         $escola = Escola::find(session('current_school_id'));
 
-        // Turma atual via enturmacao → turma
         $turma = optional(
             $aluno->enturmacao()->with('turma')->first()
         )->turma;
 
-        /* ========================================================
-           ✅ FOTO DO ALUNO - BASE64
-           ======================================================== */
-        $fotoAlunoPath = public_path("storage/img-user/{$aluno->matricula}.png");
-        if (!file_exists($fotoAlunoPath)) {
-            $fotoAlunoPath = public_path("storage/img-user/padrao.png");
-        }
-        $fotoAlunoBase64 = img_to_base64($fotoAlunoPath);
+        // Caminhos locais
+        $fotoAluno = public_path("storage/img-user/{$aluno->matricula}.png");
+        if (!file_exists($fotoAluno))
+            $fotoAluno = public_path("storage/img-user/padrao.png");
 
-        /* ========================================================
-           ✅ LOGO DA ESCOLA - BASE64
-           ======================================================== */
-        if ($escola && $escola->logo_path) {
-            $logoPath = public_path("storage/{$escola->logo_path}");
-        } else {
-            $logoPath = public_path("storage/logos/default.png");
-        }
-        $logoBase64 = img_to_base64($logoPath);
+        $logoEscola = public_path("storage/{$escola->logo_path}");
+        if (!file_exists($logoEscola))
+            $logoEscola = public_path("storage/logos/padrao.png");
 
-        /* ========================================================
-           Ocorrências
-           ======================================================== */
+        // ✅ Usa função segura
+        $fotoAlunoBase64 = safe_image_base64($fotoAluno);
+        $logoBase64      = safe_image_base64($logoEscola);
+
         $ocorrencias = Ocorrencia::with(['motivos', 'oferta.disciplina', 'professor.usuario'])
             ->where('aluno_id', $aluno->id)
             ->orderByDesc('created_at')
             ->get();
 
-        /* ========================================================
-           ✅ GERAÇÃO DO PDF
-           ======================================================== */
-        $pdf = Pdf::loadView('professor.ocorrencias.pdf_historico', [
-            'escola'          => $escola,
-            'aluno'           => $aluno,
-            'turma'           => $turma,
-            'ocorrencias'     => $ocorrencias,
+        $pdf = Pdf::setOptions([
+            'enable_remote' => true,
+            'isRemoteEnabled' => true,
+            'enable_php' => false,
+        ])->loadView('professor.ocorrencias.pdf_historico', [
+            'aluno' => $aluno,
+            'escola' => $escola,
+            'turma' => $turma,
+            'ocorrencias' => $ocorrencias,
             'fotoAlunoBase64' => $fotoAlunoBase64,
-            'logoBase64'      => $logoBase64,
-        ])->setPaper('a4');
+            'logoBase64' => $logoBase64,
+        ]);
 
-        $content  = $pdf->output();
+        $content = $pdf->output();
         $filename = "historico_ocorrencias_{$aluno->matricula}.pdf";
 
         return pdf_download($filename, $content);
     }
+
+    // public function gerarPdf($alunoId)
+    // {
+    //     $aluno  = Aluno::findOrFail($alunoId);
+    //     $escola = Escola::find(session('current_school_id'));
+
+    //     // Turma atual via enturmacao → turma
+    //     $turma = optional(
+    //         $aluno->enturmacao()->with('turma')->first()
+    //     )->turma;
+
+    //     /* ========================================================
+    //        ✅ FOTO DO ALUNO - BASE64
+    //        ======================================================== */
+    //     $fotoAlunoPath = public_path("storage/img-user/{$aluno->matricula}.png");
+    //     if (!file_exists($fotoAlunoPath)) {
+    //         $fotoAlunoPath = public_path("storage/img-user/padrao.png");
+    //     }
+    //     $fotoAlunoBase64 = img_to_base64($fotoAlunoPath);
+
+    //     /* ========================================================
+    //        ✅ LOGO DA ESCOLA - BASE64
+    //        ======================================================== */
+    //     if ($escola && $escola->logo_path) {
+    //         $logoPath = public_path("storage/{$escola->logo_path}");
+    //     } else {
+    //         $logoPath = public_path("storage/logos/syrios.png");
+    //     }
+    //     $logoBase64 = img_to_base64($logoPath);
+
+    //     /* ========================================================
+    //        Ocorrências
+    //        ======================================================== */
+    //     $ocorrencias = Ocorrencia::with(['motivos', 'oferta.disciplina', 'professor.usuario'])
+    //         ->where('aluno_id', $aluno->id)
+    //         ->orderByDesc('created_at')
+    //         ->get();
+
+    //     /* ========================================================
+    //        ✅ GERAÇÃO DO PDF
+    //        ======================================================== */
+    //     $pdf = Pdf::loadView('professor.ocorrencias.pdf_historico', [
+    //         'escola'          => $escola,
+    //         'aluno'           => $aluno,
+    //         'turma'           => $turma,
+    //         'ocorrencias'     => $ocorrencias,
+    //         'fotoAlunoBase64' => $fotoAlunoBase64,
+    //         'logoBase64'      => $logoBase64,
+    //     ])->setPaper('a4');
+
+    //     $content  = $pdf->output();
+    //     $filename = "historico_ocorrencias_{$aluno->matricula}.pdf";
+
+    //     return pdf_download($filename, $content);
+    // }
 
     // public function gerarPdf($alunoId)
         // {
