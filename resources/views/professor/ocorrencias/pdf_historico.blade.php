@@ -86,7 +86,7 @@
     </table>
 
     {{-- ===================== TÍTULO ===================== --}}
-    <h3 style="text-align:center; margin-top:5px;">Histórico de Ocorrências</h3>
+    <h3 style="text-align:center; margin-top:5px;">Histórico de Ocorrências pdf_historico.blade.php</h3>
 
     {{-- ===================== TABELA ===================== --}}
     <table>

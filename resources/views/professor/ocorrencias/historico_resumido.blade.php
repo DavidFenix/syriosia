@@ -35,7 +35,7 @@
     </div>
 
     {{-- ===================== TÍTULO ===================== --}}
-    <h5 class="text-center mb-3 fw-bold">📋 Histórico de Ocorrências do Aluno</h5>
+    <h5 class="text-center mb-3 fw-bold">📋 Histórico de Ocorrências do Aluno historico_resumido.blade</h5>
 
     {{-- ===================== TABELA ===================== --}}
     <div class="table-responsive">
