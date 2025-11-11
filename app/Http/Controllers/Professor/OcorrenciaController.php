@@ -247,12 +247,7 @@ class OcorrenciaController extends Controller
         // ✅ Usa função segura
         $fotoAlunoBase64 = safe_image_base64($fotoAluno);
         $logoBase64      = safe_image_base64($logoEscola);
-
-        dd([
-            'logo' => substr($logoBase64 ?? '', 0, 100),
-            'foto' => substr($fotoAlunoBase64 ?? '', 0, 100)
-        ]);
-                
+      
         $ocorrencias = Ocorrencia::with(['motivos', 'oferta.disciplina', 'professor.usuario'])
             ->where('aluno_id', $aluno->id)
             ->orderByDesc('created_at')
