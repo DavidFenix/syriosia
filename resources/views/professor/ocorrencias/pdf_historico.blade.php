@@ -53,8 +53,8 @@
 
     {{-- ===================== CABEÇALHO ===================== --}}
     <div class="cabecalho">
-        @if($logoBase64)
-            <img src="{{ $logoBase64 }}" alt="Logo">
+        @if($logoSvg)
+            {!! $logoSvg !!}
         @endif
 
         <h2 style="margin: 4px 0 0 0;">
@@ -72,9 +72,10 @@
     <table class="dados-aluno" style="margin-bottom:10px;">
         <tr>
             <td width="80" align="center" style="border:none;">
-                @if($fotoAlunoBase64)
-                    <img src="{{ $fotoAlunoBase64 }}" alt="Foto">
+                @if($fotoAlunoSvg)
+                    {!! $fotoAlunoSvg !!}
                 @endif
+
             </td>
 
             <td style="border:none;">

@@ -76,6 +76,23 @@ function img_to_base64($localPath)
     return "data:$mime;base64,$data";
 }
 
+function img_to_svg_base64($path, $width = 80, $height = 80)
+{
+    if (!file_exists($path)) {
+        return null;
+    }
+
+    $data = base64_encode(file_get_contents($path));
+    $mime = mime_content_type($path);
+
+    return "
+        <svg width='{$width}' height='{$height}' xmlns='http://www.w3.org/2000/svg'>
+            <image href='data:{$mime};base64,{$data}' width='{$width}' height='{$height}' />
+        </svg>
+    ";
+}
+
+
 function safe_image_base64($path)
 {
     try {

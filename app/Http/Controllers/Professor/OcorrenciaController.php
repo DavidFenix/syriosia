@@ -245,9 +245,13 @@ class OcorrenciaController extends Controller
             $logoEscola = public_path("storage/logos/padrao.png");
 
         // ✅ Usa função segura
-        $fotoAlunoBase64 = safe_image_base64($fotoAluno);
-        $logoBase64      = safe_image_base64($logoEscola);
-      
+        // $fotoAlunoBase64 = safe_image_base64($fotoAluno);
+        // $logoBase64      = safe_image_base64($logoEscola);
+
+        $fotoAlunoSvg = img_to_svg_base64($fotoAluno, 70, 70);
+        $logoSvg = img_to_svg_base64($logoEscola, 60, 60);
+
+
         $ocorrencias = Ocorrencia::with(['motivos', 'oferta.disciplina', 'professor.usuario'])
             ->where('aluno_id', $aluno->id)
             ->orderByDesc('created_at')
@@ -262,9 +266,23 @@ class OcorrenciaController extends Controller
             'escola' => $escola,
             'turma' => $turma,
             'ocorrencias' => $ocorrencias,
-            'fotoAlunoBase64' => $fotoAlunoBase64,
-            'logoBase64' => $logoBase64,
+            'fotoAlunoSvg' => $fotoAlunoSvg,
+            'logoSvg'      => $logoSvg,
+
         ]);
+
+        // $pdf = Pdf::setOptions([
+        //     'enable_remote' => true,
+        //     'isRemoteEnabled' => true,
+        //     'enable_php' => false,
+        // ])->loadView('professor.ocorrencias.pdf_historico', [
+        //     'aluno' => $aluno,
+        //     'escola' => $escola,
+        //     'turma' => $turma,
+        //     'ocorrencias' => $ocorrencias,
+        //     'fotoAlunoBase64' => $fotoAlunoBase64,
+        //     'logoBase64' => $logoBase64,
+        // ]);
 
         $content = $pdf->output();
         $filename = "historico_ocorrencias_{$aluno->matricula}.pdf";
