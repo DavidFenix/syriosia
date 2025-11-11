@@ -78,26 +78,43 @@ function img_to_base64($localPath)
 
 function safe_image_base64($path)
 {
-    if (!file_exists($path)) return null;
-
-    $mime = mime_content_type($path);
-
-    // ✅ Se já for JPG, apenas codifica
-    if ($mime === 'image/jpeg') {
-        return "data:image/jpeg;base64," . base64_encode(file_get_contents($path));
+    if (!file_exists($path)) {
+        return null;
     }
 
-    // ✅ Se for PNG → converte para JPG (sem GD!)
-    // Usa fallback via Data URI para DomPDF evitar reinterpretação
+    try {
+        $imgData = file_get_contents($path);
+        $info = getimagesize($path);
 
-    $data = file_get_contents($path);
-    $base64png = base64_encode($data);
+        // Se for PNG e potencialmente problemático, converter
+        if ($info && $info['mime'] === 'image/png') {
 
-    // ✅ truque: DomPDF só ativa GD em PNG puro
-    // mas NÃO ativa se colocamos "image/jpg" no data URI
+            // Cria imagem a partir do PNG
+            $image = imagecreatefrompng($path);
+            if (!$image) return null;
 
-    return "data:image/jpeg;base64," . $base64png;
+            // Remove transparência (fundo branco)
+            $bg = imagecreatetruecolor(imagesx($image), imagesy($image));
+            $white = imagecolorallocate($bg, 255, 255, 255);
+            imagefill($bg, 0, 0, $white);
+            imagecopy($bg, $image, 0, 0, 0, 0, imagesx($image), imagesy($image));
+
+            // Converte para JPG em memória
+            ob_start();
+            imagejpeg($bg, null, 92);
+            $jpgData = ob_get_clean();
+
+            return 'data:image/jpeg;base64,' . base64_encode($jpgData);
+        }
+
+        // Outros formatos OK
+        return 'data:' . $info['mime'] . ';base64,' . base64_encode($imgData);
+
+    } catch (\Throwable $e) {
+        return null;
+    }
 }
+
 
 
 
