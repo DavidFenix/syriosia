@@ -78,42 +78,75 @@ function img_to_base64($localPath)
 
 function safe_image_base64($path)
 {
-    if (!file_exists($path)) {
-        return null;
-    }
-
     try {
-        $imgData = file_get_contents($path);
-        $info = getimagesize($path);
-
-        // Se for PNG e potencialmente problemático, converter
-        if ($info && $info['mime'] === 'image/png') {
-
-            // Cria imagem a partir do PNG
-            $image = imagecreatefrompng($path);
-            if (!$image) return null;
-
-            // Remove transparência (fundo branco)
-            $bg = imagecreatetruecolor(imagesx($image), imagesy($image));
-            $white = imagecolorallocate($bg, 255, 255, 255);
-            imagefill($bg, 0, 0, $white);
-            imagecopy($bg, $image, 0, 0, 0, 0, imagesx($image), imagesy($image));
-
-            // Converte para JPG em memória
-            ob_start();
-            imagejpeg($bg, null, 92);
-            $jpgData = ob_get_clean();
-
-            return 'data:image/jpeg;base64,' . base64_encode($jpgData);
+        if (!file_exists($path)) {
+            return null;
         }
 
-        // Outros formatos OK
-        return 'data:' . $info['mime'] . ';base64,' . base64_encode($imgData);
+        // Carrega imagem PNG, JPG OU WEBP
+        $img = imagecreatefromstring(file_get_contents($path));
+        if (!$img) {
+            return null;
+        }
+
+        // Converte para JPG em buffer
+        ob_start();
+        imagejpeg($img, null, 90); // gera JPG limpo
+        $jpgData = ob_get_clean();
+
+        imagedestroy($img);
+
+        if (!$jpgData) {
+            return null;
+        }
+
+        // Base64 com MIME correto
+        $base64 = base64_encode($jpgData);
+        return 'data:image/jpeg;base64,' . $base64;
 
     } catch (\Throwable $e) {
         return null;
     }
 }
+
+// function safe_image_base64($path)
+// {
+//     if (!file_exists($path)) {
+//         return null;
+//     }
+
+//     try {
+//         $imgData = file_get_contents($path);
+//         $info = getimagesize($path);
+
+//         // Se for PNG e potencialmente problemático, converter
+//         if ($info && $info['mime'] === 'image/png') {
+
+//             // Cria imagem a partir do PNG
+//             $image = imagecreatefrompng($path);
+//             if (!$image) return null;
+
+//             // Remove transparência (fundo branco)
+//             $bg = imagecreatetruecolor(imagesx($image), imagesy($image));
+//             $white = imagecolorallocate($bg, 255, 255, 255);
+//             imagefill($bg, 0, 0, $white);
+//             imagecopy($bg, $image, 0, 0, 0, 0, imagesx($image), imagesy($image));
+
+//             // Converte para JPG em memória
+//             ob_start();
+//             imagejpeg($bg, null, 92);
+//             $jpgData = ob_get_clean();
+
+//             return 'data:image/jpeg;base64,' . base64_encode($jpgData);
+//         }
+
+//         // Outros formatos OK
+//         return 'data:' . $info['mime'] . ';base64,' . base64_encode($imgData);
+
+//     } catch (\Throwable $e) {
+//         return null;
+//     }
+// }
 
 
 
