@@ -14,8 +14,8 @@
         .cabecalho {
             text-align: center;
             border-bottom: 2px solid #000;
-            padding-bottom: 6px;
-            margin-bottom: 10px;
+            margin-bottom: 15px;
+            padding-bottom: 8px;
         }
 
         .cabecalho img {
@@ -25,93 +25,71 @@
             border-radius: 6px;
         }
 
-        .dados-aluno {
-            border: 1px solid #999;
-            border-radius: 8px;
-            padding: 10px;
-            margin-bottom: 20px;
-            display: flex;
-            align-items: center;
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 8px;
+        }
+
+        th, td {
+            border: 1px solid #333;
+            padding: 6px;
+        }
+
+        th {
+            background: #eee;
         }
 
         .dados-aluno img {
             width: 70px;
             height: 70px;
             border-radius: 50%;
-            margin-right: 10px;
             object-fit: cover;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 10px;
-        }
-
-        th, td {
-            border: 1px solid #444;
-            padding: 6px;
-            text-align: left;
-        }
-
-        th {
-            background: #eee;
         }
     </style>
 </head>
+
 <body>
 
-    @php
-        /*
-        |--------------------------------------------------------------------------
-        | ✅ LOGO DA ESCOLA — APENAS VIA asset() (URL pública)
-        |--------------------------------------------------------------------------
-        */
-        $logoRel = ($escola && $escola->logo_path)
-            ? "storage/{$escola->logo_path}"
-            : "storage/img-user/padrao.png";
-
-        $logoUrl = asset($logoRel);
-    @endphp
-
+    {{-- ===================== CABEÇALHO ===================== --}}
     <div class="cabecalho">
-        <img src="{{ $logoUrl }}" alt="Logo">
-        <h2 style="margin:0;padding:0;">{{ $escola->nome_e ?? 'Escola' }}</h2>
+        @if($logoBase64)
+            <img src="{{ $logoBase64 }}" alt="Logo">
+        @endif
+
+        <h2 style="margin: 4px 0 0 0;">
+            {{ $escola->nome_e ?? 'Escola' }}
+        </h2>
+
         @if(!empty($escola->frase_efeito))
-            <small>“{{ $escola->frase_efeito }}”</small>
+            <div style="font-size: 10px; margin-top: -2px;">
+                <em>"{{ $escola->frase_efeito }}"</em>
+            </div>
         @endif
     </div>
 
+    {{-- ===================== ALUNO ===================== --}}
+    <table class="dados-aluno" style="margin-bottom:10px;">
+        <tr>
+            <td width="80" align="center" style="border:none;">
+                @if($fotoAlunoBase64)
+                    <img src="{{ $fotoAlunoBase64 }}" alt="Foto">
+                @endif
+            </td>
 
-    @php
-        /*
-        |--------------------------------------------------------------------------
-        | ✅ FOTO DO ALUNO — via URL pública
-        |--------------------------------------------------------------------------
-        */
-        $fotoRel = "storage/img-user/{$aluno->matricula}.png";
+            <td style="border:none;">
+                <strong>Aluno:</strong> {{ $aluno->nome_a }}<br>
+                <strong>Matrícula:</strong> {{ $aluno->matricula }}<br>
+                <strong>Turma:</strong> {{ $turma->serie_turma ?? '-' }}
+            </td>
+        </tr>
+    </table>
 
-        if (!file_exists(public_path($fotoRel))) {
-            $fotoRel = "storage/img-user/padrao.png";
-        }
+    {{-- ===================== TÍTULO ===================== --}}
+    <h3 style="text-align:center; margin-top:5px;">Histórico de Ocorrências</h3>
 
-        $fotoFinal = asset($fotoRel);
-    @endphp
-
-
-    <div class="dados-aluno">
-        <img src="{{ $fotoFinal }}" alt="Foto do aluno">
-        <div>
-            <div><strong>Aluno:</strong> {{ $aluno->nome_a }}</div>
-            <div><strong>Matrícula:</strong> {{ $aluno->matricula }}</div>
-            <div><strong>Turma:</strong> {{ $aluno->turma->serie_turma ?? '-' }}</div>
-        </div>
-    </div>
-
-
-    <h3 style="text-align:center;">Histórico de Ocorrências</h3>
-
-    <table style="text-align:center;">
+    {{-- ===================== TABELA ===================== --}}
+    <table>
         <thead>
             <tr>
                 <th>#</th>
@@ -133,17 +111,17 @@
                 @endphp
 
                 <tr>
-                    <td>{{ $i + 1 }}</td>
-                    <td>{{ $o->created_at->format('d/m/Y') }}</td>
+                    <td align="center">{{ $i+1 }}</td>
+                    <td align="center">{{ $o->created_at->format('d/m/Y') }}</td>
                     <td>
                         {{ $o->descricao }}
                         @if($o->motivos->isNotEmpty())
                             / {{ $o->motivos->pluck('descricao')->implode(' / ') }}
                         @endif
                     </td>
-                    <td>{{ $o->oferta->disciplina->abr ?? '-' }}</td>
-                    <td>{{ $primeiro }} {{ $ultimo }}</td>
-                    <td>{{ $o->status == 1 ? 'Ativa' : 'Arquivada' }}</td>
+                    <td align="center">{{ $o->oferta->disciplina->abr ?? '-' }}</td>
+                    <td align="center">{{ $primeiro }} {{ $ultimo }}</td>
+                    <td align="center">{{ $o->status ? 'Ativa' : 'Arquivada' }}</td>
                 </tr>
             @endforeach
         </tbody>

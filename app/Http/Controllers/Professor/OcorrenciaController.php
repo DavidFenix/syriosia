@@ -231,104 +231,158 @@ class OcorrenciaController extends Controller
         $aluno  = Aluno::findOrFail($alunoId);
         $escola = Escola::find(session('current_school_id'));
 
-        // Turma atual via enturmacao -> turma
+        // Turma atual via enturmacao → turma
         $turma = optional(
             $aluno->enturmacao()->with('turma')->first()
         )->turma;
 
-        /*
-        |--------------------------------------------------------------------------
-        | ✅ FOTO DO ALUNO (100% compatível com DomPDF + Railway)
-        |--------------------------------------------------------------------------
-        | - usa URL pública (asset)
-        | - evita caminho absoluto (public_path)
-        | - se não existir, usa padrão
-        */
-
-        $fotoRel = "storage/img-user/{$aluno->matricula}.png";
-
-        if (!file_exists(public_path($fotoRel))) {
-            $fotoRel = "storage/img-user/padrao.png";
+        /* ========================================================
+           ✅ FOTO DO ALUNO - BASE64
+           ======================================================== */
+        $fotoAlunoPath = public_path("storage/img-user/{$aluno->matricula}.png");
+        if (!file_exists($fotoAlunoPath)) {
+            $fotoAlunoPath = public_path("storage/img-user/padrao.png");
         }
+        $fotoAlunoBase64 = img_to_base64($fotoAlunoPath);
 
-        // ✅ URL completa acessível publicamente
-        $fotoUrl = asset($fotoRel);
+        /* ========================================================
+           ✅ LOGO DA ESCOLA - BASE64
+           ======================================================== */
+        if ($escola && $escola->logo_path) {
+            $logoPath = public_path("storage/{$escola->logo_path}");
+        } else {
+            $logoPath = public_path("storage/logos/default.png");
+        }
+        $logoBase64 = img_to_base64($logoPath);
 
-        /*
-        |--------------------------------------------------------------------------
-        | Ocorrências
-        |--------------------------------------------------------------------------
-        */
+        /* ========================================================
+           Ocorrências
+           ======================================================== */
         $ocorrencias = Ocorrencia::with(['motivos', 'oferta.disciplina', 'professor.usuario'])
             ->where('aluno_id', $aluno->id)
             ->orderByDesc('created_at')
             ->get();
 
-        /*
-        |--------------------------------------------------------------------------
-        | PDF usando URL e não caminho local
-        |--------------------------------------------------------------------------
-        */
+        /* ========================================================
+           ✅ GERAÇÃO DO PDF
+           ======================================================== */
         $pdf = Pdf::loadView('professor.ocorrencias.pdf_historico', [
-            'escola'      => $escola,
-            'aluno'       => $aluno,
-            'turma'       => $turma,
-            'ocorrencias' => $ocorrencias,
-            'fotoFinal'   => $fotoUrl, // ✅ URL
+            'escola'          => $escola,
+            'aluno'           => $aluno,
+            'turma'           => $turma,
+            'ocorrencias'     => $ocorrencias,
+            'fotoAlunoBase64' => $fotoAlunoBase64,
+            'logoBase64'      => $logoBase64,
         ])->setPaper('a4');
 
-        /*
-        |--------------------------------------------------------------------------
-        | ✅ Download universal (Railway + Apache + Nginx)
-        |--------------------------------------------------------------------------
-        */
-        $content   = $pdf->output();
-        $filename  = "historico_ocorrencias_{$aluno->matricula}.pdf";
+        $content  = $pdf->output();
+        $filename = "historico_ocorrencias_{$aluno->matricula}.pdf";
 
         return pdf_download($filename, $content);
     }
 
+    // public function gerarPdf($alunoId)
+        // {
+        //     $aluno  = Aluno::findOrFail($alunoId);
+        //     $escola = Escola::find(session('current_school_id'));
+
+        //     // Turma atual via enturmacao -> turma
+        //     $turma = optional(
+        //         $aluno->enturmacao()->with('turma')->first()
+        //     )->turma;
+
+        //     /*
+        //     |--------------------------------------------------------------------------
+        //     | ✅ FOTO DO ALUNO (100% compatível com DomPDF + Railway)
+        //     |--------------------------------------------------------------------------
+        //     | - usa URL pública (asset)
+        //     | - evita caminho absoluto (public_path)
+        //     | - se não existir, usa padrão
+        //     */
+
+        //     $fotoRel = "storage/img-user/{$aluno->matricula}.png";
+
+        //     if (!file_exists(public_path($fotoRel))) {
+        //         $fotoRel = "storage/img-user/padrao.png";
+        //     }
+
+        //     // ✅ URL completa acessível publicamente
+        //     $fotoUrl = asset($fotoRel);
+
+        //     /*
+        //     |--------------------------------------------------------------------------
+        //     | Ocorrências
+        //     |--------------------------------------------------------------------------
+        //     */
+        //     $ocorrencias = Ocorrencia::with(['motivos', 'oferta.disciplina', 'professor.usuario'])
+        //         ->where('aluno_id', $aluno->id)
+        //         ->orderByDesc('created_at')
+        //         ->get();
+
+        //     /*
+        //     |--------------------------------------------------------------------------
+        //     | PDF usando URL e não caminho local
+        //     |--------------------------------------------------------------------------
+        //     */
+        //     $pdf = Pdf::loadView('professor.ocorrencias.pdf_historico', [
+        //         'escola'      => $escola,
+        //         'aluno'       => $aluno,
+        //         'turma'       => $turma,
+        //         'ocorrencias' => $ocorrencias,
+        //         'fotoFinal'   => $fotoUrl, // ✅ URL
+        //     ])->setPaper('a4');
+
+        //     /*
+        //     |--------------------------------------------------------------------------
+        //     | ✅ Download universal (Railway + Apache + Nginx)
+        //     |--------------------------------------------------------------------------
+        //     */
+        //     $content   = $pdf->output();
+        //     $filename  = "historico_ocorrencias_{$aluno->matricula}.pdf";
+
+        //     return pdf_download($filename, $content);
+    // }
 
     // public function gerarPdf($alunoId)
-    // {
-    //     $aluno  = Aluno::findOrFail($alunoId);
-    //     $escola = Escola::find(session('current_school_id'));
+        // {
+        //     $aluno  = Aluno::findOrFail($alunoId);
+        //     $escola = Escola::find(session('current_school_id'));
 
-    //     // Turma atual via enturmacao -> turma (primeira encontrada)
-    //     $turma = optional(
-    //         $aluno->enturmacao()->with('turma')->first()
-    //     )->turma;
+        //     // Turma atual via enturmacao -> turma (primeira encontrada)
+        //     $turma = optional(
+        //         $aluno->enturmacao()->with('turma')->first()
+        //     )->turma;
 
-    //     // Caminho absoluto para foto
-    //     $arquivoFoto  = 'storage/img-user/' . $aluno->matricula . '.png';
-    //     $fotoAbsoluto = public_path($arquivoFoto);
+        //     // Caminho absoluto para foto
+        //     $arquivoFoto  = 'storage/img-user/' . $aluno->matricula . '.png';
+        //     $fotoAbsoluto = public_path($arquivoFoto);
 
-    //     $fotoFinal = file_exists($fotoAbsoluto)
-    //         ? $fotoAbsoluto
-    //         : public_path('storage/img-user/padrao.png');
+        //     $fotoFinal = file_exists($fotoAbsoluto)
+        //         ? $fotoAbsoluto
+        //         : public_path('storage/img-user/padrao.png');
 
-    //     $ocorrencias = Ocorrencia::with(['motivos', 'oferta.disciplina', 'professor.usuario'])
-    //         ->where('aluno_id', $aluno->id)
-    //         ->orderByDesc('created_at')
-    //         ->get();
+        //     $ocorrencias = Ocorrencia::with(['motivos', 'oferta.disciplina', 'professor.usuario'])
+        //         ->where('aluno_id', $aluno->id)
+        //         ->orderByDesc('created_at')
+        //         ->get();
 
-    //     // Gera PDF normalmente
-    //     $pdf = Pdf::loadView('professor.ocorrencias.pdf_historico', [
-    //         'escola'      => $escola,
-    //         'aluno'       => $aluno,
-    //         'turma'       => $turma,
-    //         'ocorrencias' => $ocorrencias,
-    //         'fotoFinal'   => $fotoFinal,
-    //     ])->setPaper('a4');
+        //     // Gera PDF normalmente
+        //     $pdf = Pdf::loadView('professor.ocorrencias.pdf_historico', [
+        //         'escola'      => $escola,
+        //         'aluno'       => $aluno,
+        //         'turma'       => $turma,
+        //         'ocorrencias' => $ocorrencias,
+        //         'fotoFinal'   => $fotoFinal,
+        //     ])->setPaper('a4');
 
-    //     // ✅ Conteúdo bruto do PDF
-    //     $content = $pdf->output();
+        //     // ✅ Conteúdo bruto do PDF
+        //     $content = $pdf->output();
 
-    //     // ✅ Nome limpo
-    //     $filename = 'historico_ocorrencias_'.$aluno->matricula.'.pdf';
+        //     // ✅ Nome limpo
+        //     $filename = 'historico_ocorrencias_'.$aluno->matricula.'.pdf';
 
-    //     // ✅ Download universal (Railway + Apache + Nginx)
-    //     return pdf_download($filename, $content);
+        //     // ✅ Download universal (Railway + Apache + Nginx)
+        //     return pdf_download($filename, $content);
     // }
 
     // public function gerarPdf($alunoId)

@@ -61,6 +61,22 @@ if (!function_exists('dashboard_route')) {
     }
 }
 
+/**
+ * Converte uma imagem local em Base64 para uso seguro no DomPDF.
+ */
+function img_to_base64($localPath)
+{
+    if (!file_exists($localPath) || !is_readable($localPath)) {
+        return null; // fallback será tratado no Blade
+    }
+
+    $mime = mime_content_type($localPath);
+    $data = base64_encode(file_get_contents($localPath));
+
+    return "data:$mime;base64,$data";
+}
+
+
 if (!function_exists('sql_dump')) {
     /**
      * Exibe o SQL real de uma query Eloquent/Builder, log de queries ou coleção.
