@@ -50,13 +50,11 @@
 </head>
 
 <body>
+<img src="{{ asset('storage/logos/ubiratan.jpg') }}" style="width:80px;">
 
     {{-- ===================== CABEÇALHO ===================== --}}
     <div class="cabecalho">
-        @if($logoSvg)
-            {!! $logoSvg !!}
-        @endif
-
+        
         <h2 style="margin: 4px 0 0 0;">
             {{ $escola->nome_e ?? 'Escola' }}
         </h2>
@@ -72,10 +70,7 @@
     <table class="dados-aluno" style="margin-bottom:10px;">
         <tr>
             <td width="80" align="center" style="border:none;">
-                @if($fotoAlunoSvg)
-                    {!! $fotoAlunoSvg !!}
-                @endif
-
+               
             </td>
 
             <td style="border:none;">
