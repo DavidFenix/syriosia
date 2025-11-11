@@ -34,25 +34,3 @@
         @endif
         <hr class="mt-3 mb-4">
     </div>
-
-    
-{{--
-<table width="100%" cellspacing="0" cellpadding="0"
-       style="border-bottom: 1px solid #333; margin-bottom: 12px; padding-bottom: 8px;">
-  <tr>
-    <td width="80" align="center">
-      <img src="{{ $logoUrl }}" alt="Logo" style="width:70px;height:70px;object-fit:contain;">
-    </td>
-    <td align="center" style="font-family: DejaVu Sans, sans-serif;">
-      <div style="font-size:16px;font-weight:bold;">
-        {{ $escola->nome_e ?? 'Escola não identificada' }}
-      </div>
-      @if(!empty($escola->frase_efeito))
-        <div style="font-size:12px;color:#555;">
-          <em>{{ $escola->frase_efeito }}</em>
-        </div>
-      @endif
-    </td>
-  </tr>
-</table>
---}}

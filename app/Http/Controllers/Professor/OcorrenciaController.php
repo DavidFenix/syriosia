@@ -231,42 +231,63 @@ class OcorrenciaController extends Controller
         $aluno  = Aluno::findOrFail($alunoId);
         $escola = Escola::find(session('current_school_id'));
 
-        // Turma atual via enturmacao -> turma (primeira encontrada)
+        // Turma atual via enturmacao -> turma
         $turma = optional(
             $aluno->enturmacao()->with('turma')->first()
         )->turma;
 
-        // Caminho absoluto para foto
-        $arquivoFoto  = 'storage/img-user/' . $aluno->matricula . '.png';
-        $fotoAbsoluto = public_path($arquivoFoto);
+        /*
+        |--------------------------------------------------------------------------
+        | ✅ FOTO DO ALUNO (100% compatível com DomPDF + Railway)
+        |--------------------------------------------------------------------------
+        | - usa URL pública (asset)
+        | - evita caminho absoluto (public_path)
+        | - se não existir, usa padrão
+        */
 
-        $fotoFinal = file_exists($fotoAbsoluto)
-            ? $fotoAbsoluto
-            : public_path('storage/img-user/padrao.png');
+        $fotoRel = "storage/img-user/{$aluno->matricula}.png";
 
+        if (!file_exists(public_path($fotoRel))) {
+            $fotoRel = "storage/img-user/padrao.png";
+        }
+
+        // ✅ URL completa acessível publicamente
+        $fotoUrl = asset($fotoRel);
+
+        /*
+        |--------------------------------------------------------------------------
+        | Ocorrências
+        |--------------------------------------------------------------------------
+        */
         $ocorrencias = Ocorrencia::with(['motivos', 'oferta.disciplina', 'professor.usuario'])
             ->where('aluno_id', $aluno->id)
             ->orderByDesc('created_at')
             ->get();
 
-        // Gera PDF normalmente
+        /*
+        |--------------------------------------------------------------------------
+        | PDF usando URL e não caminho local
+        |--------------------------------------------------------------------------
+        */
         $pdf = Pdf::loadView('professor.ocorrencias.pdf_historico', [
             'escola'      => $escola,
             'aluno'       => $aluno,
             'turma'       => $turma,
             'ocorrencias' => $ocorrencias,
-            'fotoFinal'   => $fotoFinal,
+            'fotoFinal'   => $fotoUrl, // ✅ URL
         ])->setPaper('a4');
 
-        // ✅ Conteúdo bruto do PDF
-        $content = $pdf->output();
+        /*
+        |--------------------------------------------------------------------------
+        | ✅ Download universal (Railway + Apache + Nginx)
+        |--------------------------------------------------------------------------
+        */
+        $content   = $pdf->output();
+        $filename  = "historico_ocorrencias_{$aluno->matricula}.pdf";
 
-        // ✅ Nome limpo
-        $filename = 'historico_ocorrencias_'.$aluno->matricula.'.pdf';
-
-        // ✅ Download universal (Railway + Apache + Nginx)
         return pdf_download($filename, $content);
     }
+
 
     // public function gerarPdf($alunoId)
     // {
@@ -278,9 +299,10 @@ class OcorrenciaController extends Controller
     //         $aluno->enturmacao()->with('turma')->first()
     //     )->turma;
 
-    //     // Para DomPDF, prefira caminho absoluto (public_path) ao invés de asset()
-    //     $arquivoFoto = 'storage/img-user/' . $aluno->matricula . '.png';
+    //     // Caminho absoluto para foto
+    //     $arquivoFoto  = 'storage/img-user/' . $aluno->matricula . '.png';
     //     $fotoAbsoluto = public_path($arquivoFoto);
+
     //     $fotoFinal = file_exists($fotoAbsoluto)
     //         ? $fotoAbsoluto
     //         : public_path('storage/img-user/padrao.png');
@@ -290,6 +312,7 @@ class OcorrenciaController extends Controller
     //         ->orderByDesc('created_at')
     //         ->get();
 
+    //     // Gera PDF normalmente
     //     $pdf = Pdf::loadView('professor.ocorrencias.pdf_historico', [
     //         'escola'      => $escola,
     //         'aluno'       => $aluno,
@@ -298,7 +321,47 @@ class OcorrenciaController extends Controller
     //         'fotoFinal'   => $fotoFinal,
     //     ])->setPaper('a4');
 
-    //     return $pdf->download('historico_ocorrencias_'.$aluno->matricula.'.pdf');
+    //     // ✅ Conteúdo bruto do PDF
+    //     $content = $pdf->output();
+
+    //     // ✅ Nome limpo
+    //     $filename = 'historico_ocorrencias_'.$aluno->matricula.'.pdf';
+
+    //     // ✅ Download universal (Railway + Apache + Nginx)
+    //     return pdf_download($filename, $content);
+    // }
+
+    // public function gerarPdf($alunoId)
+        // {
+        //     $aluno  = Aluno::findOrFail($alunoId);
+        //     $escola = Escola::find(session('current_school_id'));
+
+        //     // Turma atual via enturmacao -> turma (primeira encontrada)
+        //     $turma = optional(
+        //         $aluno->enturmacao()->with('turma')->first()
+        //     )->turma;
+
+        //     // Para DomPDF, prefira caminho absoluto (public_path) ao invés de asset()
+        //     $arquivoFoto = 'storage/img-user/' . $aluno->matricula . '.png';
+        //     $fotoAbsoluto = public_path($arquivoFoto);
+        //     $fotoFinal = file_exists($fotoAbsoluto)
+        //         ? $fotoAbsoluto
+        //         : public_path('storage/img-user/padrao.png');
+
+        //     $ocorrencias = Ocorrencia::with(['motivos', 'oferta.disciplina', 'professor.usuario'])
+        //         ->where('aluno_id', $aluno->id)
+        //         ->orderByDesc('created_at')
+        //         ->get();
+
+        //     $pdf = Pdf::loadView('professor.ocorrencias.pdf_historico', [
+        //         'escola'      => $escola,
+        //         'aluno'       => $aluno,
+        //         'turma'       => $turma,
+        //         'ocorrencias' => $ocorrencias,
+        //         'fotoFinal'   => $fotoFinal,
+        //     ])->setPaper('a4');
+
+        //     return $pdf->download('historico_ocorrencias_'.$aluno->matricula.'.pdf');
     // }
 
     public function historicoResumido($alunoId)
