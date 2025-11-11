@@ -10,6 +10,7 @@ use Symfony\Component\HttpFoundation\Cookie;
 // Auth
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\DiagController;
+use App\Http\Controllers\DiagPdfController;
 
 // Master
 use App\Http\Controllers\Master\EscolaController as MasterEscolaController;
@@ -134,7 +135,7 @@ Route::middleware(['web'])->group(function () {
                 ]
             );
         });
-
+        Route::get('/pdf-full', [DiagPdfController::class, 'full']);
 
 
 
