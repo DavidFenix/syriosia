@@ -50,11 +50,11 @@
 </head>
 
 <body>
-<img src="{{ asset('storage/logos/ubiratan.jpg') }}" style="width:80px;">
 
     {{-- ===================== CABEÇALHO ===================== --}}
     <div class="cabecalho">
-        
+        <img src="{{ $logoFile }}" alt="Logo">
+
         <h2 style="margin: 4px 0 0 0;">
             {{ $escola->nome_e ?? 'Escola' }}
         </h2>
@@ -70,7 +70,7 @@
     <table class="dados-aluno" style="margin-bottom:10px;">
         <tr>
             <td width="80" align="center" style="border:none;">
-               
+                <img src="{{ $fotoFile }}" alt="Foto">
             </td>
 
             <td style="border:none;">
@@ -82,7 +82,7 @@
     </table>
 
     {{-- ===================== TÍTULO ===================== --}}
-    <h3 style="text-align:center; margin-top:5px;">Histórico de Ocorrências pdf_historico.blade.php</h3>
+    <h3 style="text-align:center; margin-top:5px;">Histórico de Ocorrências</h3>
 
     {{-- ===================== TABELA ===================== --}}
     <table>
@@ -103,7 +103,7 @@
                     $nome = $o->professor->usuario->nome_u ?? '';
                     $partes = explode(' ', trim($nome));
                     $primeiro = $partes[0] ?? '';
-                    $ultimo = count($partes) > 1 ? end($partes) : '';
+                    $ultimo   = count($partes) > 1 ? end($partes) : '';
                 @endphp
 
                 <tr>
