@@ -35,7 +35,7 @@
                 @forelse($ocorrencias as $index => $oc)
                     @php
                         $a = $oc->aluno;
-                        $fotoNome = $a->matricula . '.png';
+                        $fotoNome = $a->school_id . '_' . $a->matricula . '.png';
                         $fotoRelPath = 'storage/img-user/' . $fotoNome;
                         $fotoAbsoluta = public_path($fotoRelPath);
                         $fotoUrl = file_exists($fotoAbsoluta)
@@ -315,7 +315,7 @@ $(document).ready(function () {
 
                     @php
                         $a = $oc->aluno;
-                        $fotoNome = $a->matricula . '.png';
+                        $fotoNome = $a->school_id . '_' . $a->matricula . '.png';
                         $fotoRelPath = 'storage/img-user/' . $fotoNome;
                         $fotoAbsoluta = public_path($fotoRelPath);
                         $fotoUrl = file_exists($fotoAbsoluta)
@@ -592,7 +592,7 @@ console.log('Total renderizado pelo Laravel:', {{ count($ocorrencias) }});
 
                     @php
                         $a = $oc->aluno;
-                        $fotoNome = $a->matricula . '.png';
+                        $fotoNome = $a->school_id . '_' . $a->matricula . '.png';
                         $fotoRelPath = 'storage/img-user/' . $fotoNome;
                         $fotoAbsoluta = public_path($fotoRelPath);
                         $fotoUrl = file_exists($fotoAbsoluta)
@@ -820,7 +820,7 @@ $(document).ready(function () {
 
                     @php
                         $a = $oc->aluno;
-                        $fotoNome = $a->matricula . '.png';
+                        $fotoNome = $a->school_id . '_' . $a->matricula . '.png';
                         $fotoRelPath = 'storage/img-user/' . $fotoNome;
                         $fotoAbsoluta = public_path($fotoRelPath);
                         $fotoUrl = file_exists($fotoAbsoluta)

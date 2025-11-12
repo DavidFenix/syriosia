@@ -125,7 +125,7 @@
     <div class="card mb-4 shadow-sm">
         <div class="card-body d-flex align-items-center">
             @php
-                $fotoNome = $ocorrencia->aluno->matricula . '.png';
+                $fotoNome = $ocorrencia->aluno->school_id . '_' . $ocorrencia->aluno->matricula . '.png';
                 $fotoPath = public_path('storage/img-user/' . $fotoNome);
                 $fotoUrl = file_exists($fotoPath)
                     ? asset('storage/img-user/' . $fotoNome)

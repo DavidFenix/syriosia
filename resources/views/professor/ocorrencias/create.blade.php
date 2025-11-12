@@ -34,7 +34,7 @@
                 
                 @forelse($alunos as $a)
                     @php
-                        $fotoNome = $a->matricula . '.png';
+                        $fotoNome = $a->school_id . '_' . $a->matricula . '.png';
                         $fotoRelPath = 'storage/img-user/' . $fotoNome;
                         $fotoAbsoluta = public_path($fotoRelPath);
                         $fotoUrl = file_exists($fotoAbsoluta)
