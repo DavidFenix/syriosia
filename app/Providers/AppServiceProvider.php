@@ -26,7 +26,8 @@ class AppServiceProvider extends ServiceProvider
     {
         // 🔧 Configurações gerais
         Schema::defaultStringLength(191);
-        Carbon::setLocale('pt_BR');
+        date_default_timezone_set(config('app.timezone'));
+        Carbon::setLocale(config('app.locale'));
         Paginator::defaultView('vendor.pagination.default');
 
         /*
