@@ -137,6 +137,20 @@ Route::middleware(['web'])->group(function () {
         });
         Route::get('/pdf-full', [DiagPdfController::class, 'full']);
 
+        Route::get('/diag-gd', function () {
+            $status = extension_loaded('gd');
+            $details = $status ? gd_info() : null;
+
+            return response()->json([
+                'GD_Ativo' => $status ? '✅ Sim' : '❌ Não',
+                'Versão' => $details['GD Version'] ?? null,
+                'Suporte JPEG' => $details['JPEG Support'] ?? null,
+                'Suporte PNG' => $details['PNG Support'] ?? null,
+                'Suporte WebP' => $details['WebP Support'] ?? null,
+            ]);
+        });
+
+
 
 
 
