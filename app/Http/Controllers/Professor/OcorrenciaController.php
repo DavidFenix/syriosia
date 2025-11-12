@@ -271,8 +271,13 @@ class OcorrenciaController extends Controller
         */
         $fotoBase = public_path("storage/img-user/");
         $mat = $aluno->matricula;
+        $school = $aluno->school_id;
 
+        // Lista de possíveis nomes de arquivo
         $possiveisFotos = [
+            "{$school}_{$mat}.jpg",
+            "{$school}_{$mat}.jpeg",
+            "{$school}_{$mat}.png",
             "{$mat}.jpg",
             "{$mat}.jpeg",
             "{$mat}.png",
