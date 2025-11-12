@@ -48,182 +48,186 @@ use App\Http\Controllers\Professor\{
     PerfilController
 };
 
-Route::get('/', function () {
-    return view('welcome');
-});
+use App\Http\Controllers\Escola\CadastroLoteProfessorController;
 
-//somente para testes, remova em produção
-Route::get('/kill-cookie', function () {
-    return response('Cookie removido')
-        ->cookie('syriosia_session', null, -1, '/', 'syriosia.up.railway.app', true, true, false, 'None')
-        ->cookie('XSRF-TOKEN', null, -1, '/', 'syriosia.up.railway.app', true, true, false, 'None');
-});
 
-//diagnóstivo fora do middleware mostrou que a sessão funciona
-Route::get('/diagini', [DiagController::class, 'indexini']);
-Route::get('/diagini/cookie-testini', [DiagController::class, 'cookieTestini']);
+//rotas de testes
+    Route::get('/', function () {
+        return view('welcome');
+    });
 
-Route::middleware(['web'])->group(function () {
+    //somente para testes, remova em produção
+    Route::get('/kill-cookie', function () {
+        return response('Cookie removido')
+            ->cookie('syriosia_session', null, -1, '/', 'syriosia.up.railway.app', true, true, false, 'None')
+            ->cookie('XSRF-TOKEN', null, -1, '/', 'syriosia.up.railway.app', true, true, false, 'None');
+    });
 
-    // Página inicial
-    Route::get('/', fn() => redirect()->route('login'));
+    //diagnóstivo fora do middleware mostrou que a sessão funciona
+    Route::get('/diagini', [DiagController::class, 'indexini']);
+    Route::get('/diagini/cookie-testini', [DiagController::class, 'cookieTestini']);
 
-    // Login / Logout (públicas)
-    Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
-    Route::post('/login', [LoginController::class, 'login']);
-    Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
+    Route::middleware(['web'])->group(function () {
 
-    // Regimento público
-    Route::get('regimento/{school}', [RegimentoController::class, 'visualizar'])
-        ->name('regimento.visualizar');
+        // Página inicial
+        Route::get('/', fn() => redirect()->route('login'));
 
-    // Login temporário (placeholder)
-    //Route::get('/login', fn() => 'Tela de login')->name('login');
+        // Login / Logout (públicas)
+        Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
+        Route::post('/login', [LoginController::class, 'login']);
+        Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
 
-    // ==================================================
-    // DIAGNÓSTICO
-    //1º acesse /diag/cookie-test para carregar o cookie
-    //2º acesse /diag para ver se o cookie foi recebido, ou inspecione o codigo no navegador para ver o cookie
-    // ==================================================
-    Route::prefix('diag')->group(function () { 
+        // Regimento público
+        Route::get('regimento/{school}', [RegimentoController::class, 'visualizar'])
+            ->name('regimento.visualizar');
 
-        Route::get('/', [DiagController::class, 'index'])->name('diag.index');
+        // Login temporário (placeholder)
+        //Route::get('/login', fn() => 'Tela de login')->name('login');
 
-        // se ainda não criou os métodos headers/cookies/etc, comente estes:
-        // Route::get('/headers', [DiagController::class, 'headers'])->name('diag.headers'); 
-        // Route::get('/cookies', [DiagController::class, 'cookies'])->name('diag.cookies'); 
-        // Route::get('/set-cookie', [DiagController::class, 'setCookie'])->name('diag.setcookie'); 
-        // Route::get('/configs', [DiagController::class, 'configs'])->name('diag.configs'); 
-        
-        Route::get('/cookie-test', function () { 
-            return response('ok')->cookie('probe', '1', 0, null, null, true, true, false, 'None'); 
+        // ==================================================
+        // DIAGNÓSTICO
+        //1º acesse /diag/cookie-test para carregar o cookie
+        //2º acesse /diag para ver se o cookie foi recebido, ou inspecione o codigo no navegador para ver o cookie
+        // ==================================================
+        Route::prefix('diag')->group(function () { 
+
+            Route::get('/', [DiagController::class, 'index'])->name('diag.index');
+
+            // se ainda não criou os métodos headers/cookies/etc, comente estes:
+            // Route::get('/headers', [DiagController::class, 'headers'])->name('diag.headers'); 
+            // Route::get('/cookies', [DiagController::class, 'cookies'])->name('diag.cookies'); 
+            // Route::get('/set-cookie', [DiagController::class, 'setCookie'])->name('diag.setcookie'); 
+            // Route::get('/configs', [DiagController::class, 'configs'])->name('diag.configs'); 
+            
+            Route::get('/cookie-test', function () { 
+                return response('ok')->cookie('probe', '1', 0, null, null, true, true, false, 'None'); 
+            });
+
+            Route::get('/storage', [DiagController::class, 'storage'])->name('diag.storage');
+
+            Route::get('/pdf-diag', [DiagController::class, 'pdfDiag'])->name('diag.pdf.diag');
+            Route::get('/pdf-download', [DiagController::class, 'pdfDownloadTest'])->name('diag.pdf.download');
+            Route::get('/raw-pdf', function () {
+                $content = "%PDF-1.4\nHello world\n%%EOF";
+                return response($content, 200)
+                    ->header('Content-Type', 'application/pdf')
+                    ->header('Content-Length', strlen($content));
+            });
+            Route::get('/raw-binary', function () {
+                $binary = random_bytes(1024);
+                return response($binary)
+                    ->header('Content-Type', 'application/octet-stream')
+                    ->header('Content-Length', strlen($binary));
+            });
+            Route::get('/raw-fixed', function () {
+                $content = "%PDF-1.4\nHello railway\n%%EOF";
+                // DESATIVA COMPACTAÇÃO E BUFFER EM QUALQUER SERVIDOR
+                ini_set('zlib.output_compression', '0');
+                ini_set('output_buffering', 'off');
+                return response()->streamDownload(
+                    function () use ($content) {
+                        echo $content;
+                        flush();  // força saída imediata
+                    },
+                    'raw-fixed.pdf',
+                    [
+                        'Content-Type' => 'application/pdf',
+                        'Content-Length' => strlen($content),
+                        'Content-Encoding' => 'none',
+                        'Cache-Control' => 'private, no-transform',
+                        'Transfer-Encoding' => 'identity'
+                    ]
+                );
+            });
+            Route::get('/pdf-full', [DiagPdfController::class, 'full']);
+
+            Route::get('/diag-gd', function () {
+                $status = extension_loaded('gd');
+                $details = $status ? gd_info() : null;
+
+                return response()->json([
+                    'GD_Ativo' => $status ? '✅ Sim' : '❌ Não',
+                    'Versão' => $details['GD Version'] ?? null,
+                    'Suporte JPEG' => $details['JPEG Support'] ?? null,
+                    'Suporte PNG' => $details['PNG Support'] ?? null,
+                    'Suporte WebP' => $details['WebP Support'] ?? null,
+                ]);
+            });
+
+
+
+
+
+
+
+        }); 
+
+        // ==================================================
+        // Cache Clear
+        // ==================================================
+        Route::get('/cache-clear', function () {
+            Artisan::call('config:clear');
+            Artisan::call('cache:clear');
+            Artisan::call('route:clear');
+            Artisan::call('view:clear');
+            return "Cache limpo!";
         });
 
-        Route::get('/storage', [DiagController::class, 'storage'])->name('diag.storage');
-
-        Route::get('/pdf-diag', [DiagController::class, 'pdfDiag'])->name('diag.pdf.diag');
-        Route::get('/pdf-download', [DiagController::class, 'pdfDownloadTest'])->name('diag.pdf.download');
-        Route::get('/raw-pdf', function () {
-            $content = "%PDF-1.4\nHello world\n%%EOF";
-            return response($content, 200)
-                ->header('Content-Type', 'application/pdf')
-                ->header('Content-Length', strlen($content));
+        // ==================================================
+        // Bloco WAY (login fake)
+        // ==================================================
+        Route::get('/way', function () {
+            return '
+            <h2>Login Teste</h2>
+            <form method="post" action="/waylogin">
+              <input type="email" name="email" placeholder="Email" required><br><br>
+              <input type="password" name="password" placeholder="Senha" required><br><br>
+              <button type="submit">Entrar</button>
+            </form>
+            <hr><a href="/waydiag">Diagnóstico</a>';
         });
-        Route::get('/raw-binary', function () {
-            $binary = random_bytes(1024);
-            return response($binary)
-                ->header('Content-Type', 'application/octet-stream')
-                ->header('Content-Length', strlen($binary));
-        });
-        Route::get('/raw-fixed', function () {
-            $content = "%PDF-1.4\nHello railway\n%%EOF";
-            // DESATIVA COMPACTAÇÃO E BUFFER EM QUALQUER SERVIDOR
-            ini_set('zlib.output_compression', '0');
-            ini_set('output_buffering', 'off');
-            return response()->streamDownload(
-                function () use ($content) {
-                    echo $content;
-                    flush();  // força saída imediata
-                },
-                'raw-fixed.pdf',
-                [
-                    'Content-Type' => 'application/pdf',
-                    'Content-Length' => strlen($content),
-                    'Content-Encoding' => 'none',
-                    'Cache-Control' => 'private, no-transform',
-                    'Transfer-Encoding' => 'identity'
-                ]
-            );
-        });
-        Route::get('/pdf-full', [DiagPdfController::class, 'full']);
 
-        Route::get('/diag-gd', function () {
-            $status = extension_loaded('gd');
-            $details = $status ? gd_info() : null;
-
-            return response()->json([
-                'GD_Ativo' => $status ? '✅ Sim' : '❌ Não',
-                'Versão' => $details['GD Version'] ?? null,
-                'Suporte JPEG' => $details['JPEG Support'] ?? null,
-                'Suporte PNG' => $details['PNG Support'] ?? null,
-                'Suporte WebP' => $details['WebP Support'] ?? null,
+        Route::post('/waylogin', function (Request $request) {
+            Session::put('user', [
+                'email' => $request->email,
+                'logged_at' => now()->toDateTimeString()
             ]);
+            return redirect('/waydashboard');
         });
 
+        Route::get('/waydashboard', function () {
+            if (!Session::has('user')) {
+                return redirect('/way');
+            }
+            $u = Session::get('user');
+            return "
+            <h2>Área Protegida</h2>
+            <p>Email: <b>{$u['email']}</b></p>
+            <p>Login em: {$u['logged_at']}</p>
+            <a href='/waylogout'>Sair</a> | <a href='/waydiag'>Diagnóstico</a>";
+        });
 
-
-
-
-
-
-    }); 
-
-    // ==================================================
-    // Cache Clear
-    // ==================================================
-    Route::get('/cache-clear', function () {
-        Artisan::call('config:clear');
-        Artisan::call('cache:clear');
-        Artisan::call('route:clear');
-        Artisan::call('view:clear');
-        return "Cache limpo!";
-    });
-
-    // ==================================================
-    // Bloco WAY (login fake)
-    // ==================================================
-    Route::get('/way', function () {
-        return '
-        <h2>Login Teste</h2>
-        <form method="post" action="/waylogin">
-          <input type="email" name="email" placeholder="Email" required><br><br>
-          <input type="password" name="password" placeholder="Senha" required><br><br>
-          <button type="submit">Entrar</button>
-        </form>
-        <hr><a href="/waydiag">Diagnóstico</a>';
-    });
-
-    Route::post('/waylogin', function (Request $request) {
-        Session::put('user', [
-            'email' => $request->email,
-            'logged_at' => now()->toDateTimeString()
-        ]);
-        return redirect('/waydashboard');
-    });
-
-    Route::get('/waydashboard', function () {
-        if (!Session::has('user')) {
+        Route::get('/waylogout', function () {
+            Session::flush();
             return redirect('/way');
-        }
-        $u = Session::get('user');
-        return "
-        <h2>Área Protegida</h2>
-        <p>Email: <b>{$u['email']}</b></p>
-        <p>Login em: {$u['logged_at']}</p>
-        <a href='/waylogout'>Sair</a> | <a href='/waydiag'>Diagnóstico</a>";
+        });
+
+        Route::get('/waydiag', function (Request $r) {
+            $headers = [];
+            foreach ($r->headers->all() as $k => $v) {
+                $headers[$k] = implode('; ', $v);
+            }
+
+            return response()->make("
+            <h2>Diagnóstico</h2>
+            <p>HTTPS detectado: " . ($r->isSecure() ? 'Sim' : 'Não') . "</p>
+            <h3>Cookies</h3><pre>" . print_r($r->cookies->all(), true) . "</pre>
+            <h3>Sessão</h3><pre>" . print_r(session()->all(), true) . "</pre>
+            <h3>Headers</h3><pre>" . print_r($headers, true) . "</pre>
+            <a href='/way'>Voltar</a>", 200, ['Content-Type' => 'text/html']);
+        });
+
     });
-
-    Route::get('/waylogout', function () {
-        Session::flush();
-        return redirect('/way');
-    });
-
-    Route::get('/waydiag', function (Request $r) {
-        $headers = [];
-        foreach ($r->headers->all() as $k => $v) {
-            $headers[$k] = implode('; ', $v);
-        }
-
-        return response()->make("
-        <h2>Diagnóstico</h2>
-        <p>HTTPS detectado: " . ($r->isSecure() ? 'Sim' : 'Não') . "</p>
-        <h3>Cookies</h3><pre>" . print_r($r->cookies->all(), true) . "</pre>
-        <h3>Sessão</h3><pre>" . print_r(session()->all(), true) . "</pre>
-        <h3>Headers</h3><pre>" . print_r($headers, true) . "</pre>
-        <a href='/way'>Voltar</a>", 200, ['Content-Type' => 'text/html']);
-    });
-
-});
 
 
 
@@ -394,6 +398,29 @@ Route::middleware(['auth', 'ensure.context'])->group(function () {
 
             Route::get('alunos/fotos-lote', [AlunoFotoLoteController::class, 'index'])->name('alunos.fotos.lote');
             Route::post('alunos/fotos-lote', [AlunoFotoLoteController::class, 'store'])->name('alunos.fotos.lote.store');
+
+            // cadastro em lote de professores (duas etapas)
+            Route::prefix('professores-lote')->group(function () {
+
+                Route::get('/', [CadastroLoteProfessorController::class, 'index'])
+                    ->name('professores.lote.index');
+
+                Route::post('/preview', [CadastroLoteProfessorController::class, 'preview'])
+                    ->name('professores.lote.preview');
+
+                Route::post('/importar', [CadastroLoteProfessorController::class, 'importarConfirmado'])
+                    ->name('professores.lote.importar');
+
+                Route::get('/modelo', [CadastroLoteProfessorController::class, 'modelo'])
+                    ->name('professores.lote.modelo');
+            });
+
+
+           
+
+
+
+
     });
 
 

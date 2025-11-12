@@ -1,0 +1,33 @@
+@extends('layouts.app')
+
+@section('content')
+<div class="container">
+
+    <h1>Cadastro em Lote de Professores (CSV)</h1>
+
+    <div class="alert alert-info">
+        <b>Instruções:</b><br>
+        • Envie um arquivo .csv separado por ponto-e-vírgula (;) (Excel faz isso automaticamente) basta salvar no modelo .csv<br>
+        • Nada será salvo imediatamente — você poderá revisar antes<br>
+        • Senha inicial = CPF<br>
+        • Apenas o papel “professor” será aceita<br>
+    </div>
+
+    <a href="{{ route('escola.professores.lote.modelo') }}" class="btn btn-success mb-3">
+        📄 Baixar Modelo CSV
+    </a>
+
+    <form action="{{ route('escola.professores.lote.preview') }}" method="POST"
+          enctype="multipart/form-data">
+        @csrf
+
+        <div class="mb-3">
+            <label>Arquivo CSV:</label>
+            <input type="file" name="arquivo" class="form-control" required>
+        </div>
+
+        <button class="btn btn-primary">🔍 Pré-visualizar</button>
+    </form>
+
+</div>
+@endsection
