@@ -2,7 +2,8 @@
 
 @section('content')
 <div class="container">
-    <h1>Resultado Final</h1>
+
+    <h1>Resultado Final da Importação</h1>
 
     <table class="table table-bordered">
         <thead>
@@ -25,5 +26,6 @@
     </table>
 
     <a href="{{ route('escola.professores.lote.index') }}" class="btn btn-primary">← Voltar</a>
+
 </div>
 @endsection

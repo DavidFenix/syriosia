@@ -3,37 +3,67 @@
 namespace App\Services;
 
 use App\Models\Usuario;
-use App\Models\Role;
+use App\Models\UsuarioRole;
 use App\Models\Professor;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Response;
 
 class CadastroLoteProfessorService
 {
-    /**
-     * Gera o arquivo CSV modelo com formatação compatível com Excel.
-     */
-    public function gerarModeloCSV()
+    private $schoolId;
+
+    public function __construct($schoolId)
     {
-        // BOM para UTF-8
-        $bom = "\xEF\xBB\xBF";
-
-        $csv  = $bom;
-        $csv .= "sep=;\r\n"; // Excel oculta essa linha, mas usa o separador ;
-        $csv .= "cpf;nome;role;disciplinas\r\n";
-        $csv .= "00012345600;JOAO DA SILVA;professor;MAT,BIO\r\n";
-        $csv .= "00098765400;MARIA OLIVEIRA;professor;\r\n";
-
-        return Response::make($csv, 200, [
-            'Content-Type' => 'text/csv; charset=UTF-8',
-            'Content-Disposition' => 'attachment; filename=modelo_professores.csv',
-        ]);
+        $this->schoolId = $schoolId;
     }
 
+    /**
+     *  SANITIZAÇÃO COMPLETA DO CPF (Excel, Unicode, BOM, etc.)
+     */
+    private function sanitizarCpf($cpf)
+    {
+        if ($cpf === null) return '';
+
+        // Converter encoding
+        $cpf = mb_convert_encoding($cpf, 'UTF-8', 'UTF-8, ISO-8859-1, ASCII');
+
+        // Remover BOM e caracteres invisíveis (zero-width, nbsp, etc.)
+        $cpf = preg_replace('/\x{FEFF}|\x{200B}|\x{200C}|\x{200D}|\x{00A0}/u', '', $cpf);
+
+        // Remover tudo que não seja A-Z, a-z ou 0-9
+        $cpf = preg_replace('/[^A-Za-z0-9]/', '', $cpf);
+
+        return trim($cpf);
+    }
 
     /**
-     * Lê o CSV e retorna apenas a pré-visualização
-     * sem salvar nada no banco.
+     *  SANITIZAÇÃO DO NOME
+     */
+    private function sanitizarNome($nome)
+    {
+        if ($nome === null) return '';
+
+        $nome = mb_convert_encoding($nome, 'UTF-8', 'UTF-8, ISO-8859-1, ASCII');
+        $nome = preg_replace('/\x{FEFF}|\x{200B}|\x{200C}|\x{200D}|\x{00A0}/u', '', $nome);
+
+        return trim($nome);
+    }
+
+    /**
+     *  DETECTA LINHA TOTALMENTE VAZIA
+     */
+    private function linhaVazia($dados)
+    {
+        foreach ($dados as $campo) {
+            if (trim($campo) !== '') return false;
+        }
+        return true;
+    }
+
+    /**
+     * --------------------------------------------------------------------
+     *  PREVIEW DO CSV — 100% REGRAS DO SYRIOS
+     * --------------------------------------------------------------------
      */
     public function previewCSV($file)
     {
@@ -43,58 +73,110 @@ class CadastroLoteProfessorService
 
         $handle = fopen($file->getRealPath(), 'r');
 
-        if (!$handle) {
-            return [
-                ['linha' => 0, 'cpf' => '', 'nome' => '', 'status' => 'erro', 'msg' => 'Não foi possível abrir o arquivo.']
-            ];
-        }
-
         while (($dados = fgetcsv($handle, 0, ';')) !== false) {
 
             $linhaNumero++;
 
-            // Ignorar linha sep=
+            // Ignorar sep=;
             if ($linhaNumero === 1 && isset($dados[0]) && str_starts_with($dados[0], 'sep=')) {
                 continue;
             }
 
-            // Ignorar linha vazia
             if ($this->linhaVazia($dados)) continue;
 
-            // Garantir 4 colunas
-            $dados = array_pad($dados, 4, '');
+            // Garante 3 colunas
+            $dados = array_pad($dados, 3, '');
 
-            list($cpf, $nome, $role, $disciplinas) = $dados;
+            list($cpfRaw, $nomeRaw, $roleRaw) = $dados;
 
-            $cpf = trim($cpf);
-            $nome = trim($nome);
-            $role = strtolower(trim($role));
+            $cpf  = $this->sanitizarCpf($cpfRaw);
+            $nome = $this->sanitizarNome($nomeRaw);
+            $role = strtolower(trim($roleRaw));
 
-            // Verificar CPF duplicado no próprio arquivo
+            // Duplicado no arquivo
             if (in_array($cpf, $cpfsArquivo)) {
-                $preview[] = $this->previewLinha($linhaNumero, $cpf, $nome, 'erro', false, "CPF duplicado no arquivo");
+                $preview[] = $this->linhaPreview($linhaNumero, $cpf, $nome, 'erro', false, "CPF duplicado no arquivo");
                 continue;
             }
             $cpfsArquivo[] = $cpf;
 
-            // Validar campos
+            // Campos vazios
             if ($cpf === '') {
-                $preview[] = $this->previewLinha($linhaNumero, $cpf, $nome, 'erro', false, "CPF vazio");
+                $preview[] = $this->linhaPreview($linhaNumero, $cpf, $nome, 'erro', false, "CPF vazio");
                 continue;
             }
 
             if ($nome === '') {
-                $preview[] = $this->previewLinha($linhaNumero, $cpf, $nome, 'erro', false, "Nome vazio");
+                $preview[] = $this->linhaPreview($linhaNumero, $cpf, $nome, 'erro', false, "Nome vazio");
                 continue;
             }
 
             if ($role !== 'professor') {
-                $preview[] = $this->previewLinha($linhaNumero, $cpf, $nome, 'ignorado', false, "Role '{$role}' não permitida");
+                $preview[] = $this->linhaPreview($linhaNumero, $cpf, $nome, 'ignorado', false, "Role '{$role}' não permitida");
                 continue;
             }
 
-            // Se chegou aqui → linha válida
-            $preview[] = $this->previewLinha($linhaNumero, $cpf, $nome, 'ok', true, "Será importado");
+            // Verificar se usuário existe
+            $usuario = Usuario::where('cpf', $cpf)->first();
+
+            if ($usuario) {
+
+                // 🔍 Já é professor nesta escola?
+                $jaProfessor = DB::table(prefix('professor'))
+                    ->where('usuario_id', $usuario->id)
+                    ->where('school_id', $this->schoolId)
+                    ->exists();
+
+                if ($jaProfessor) {
+                    $preview[] = $this->linhaPreview(
+                        $linhaNumero, $cpf, $nome,
+                        'ignorado', false,
+                        "Usuário já está vinculado como professor nesta escola"
+                    );
+                    continue;
+                }
+
+                // 🔍 Já tem role professor nesta escola?
+                $jaTemRole = DB::table(prefix('usuario_role'))
+                    ->where('usuario_id', $usuario->id)
+                    ->where('school_id', $this->schoolId)
+                    ->where('role_id', 4)
+                    ->exists();
+
+                if ($jaTemRole) {
+                    $preview[] = $this->linhaPreview(
+                        $linhaNumero, $cpf, $nome,
+                        'ignorado', false,
+                        "Usuário já possui a role professor nesta escola"
+                    );
+                    continue;
+                }
+
+                // 🔍 Existe em outra escola → OK para vincular
+                if ($usuario->school_id != $this->schoolId) {
+                    $preview[] = $this->linhaPreview(
+                        $linhaNumero, $cpf, $nome,
+                        'info', true,
+                        "Usuário existe em outra escola — será vinculado"
+                    );
+                    continue;
+                }
+
+                // 🔍 Existe na mesma escola → erro
+                $preview[] = $this->linhaPreview(
+                    $linhaNumero, $cpf, $nome,
+                    'erro', false,
+                    "Usuário já existe nesta escola"
+                );
+                continue;
+            }
+
+            // Linha válida (criar + vincular)
+            $preview[] = $this->linhaPreview(
+                $linhaNumero, $cpf, $nome,
+                'ok', true,
+                "Será criado e vinculado"
+            );
         }
 
         fclose($handle);
@@ -102,100 +184,10 @@ class CadastroLoteProfessorService
         return $preview;
     }
 
-
     /**
-     * Importa efetivamente os dados validados pelo preview.
+     *  FORMATAÇÃO PADRÃO DE LINHA DO PREVIEW
      */
-    public function importarLinhasValidadas($linhas)
-    {
-        $resultado = [];
-        $schoolId = session('current_school_id');
-
-        foreach ($linhas as $linha) {
-
-            if (!$linha['importar']) {
-                // Ignorar os que já foram marcados como erro/ignorado
-                $resultado[] = [
-                    'linha' => $linha['linha'],
-                    'status' => 'ignorado',
-                    'msg' => $linha['msg']
-                ];
-                continue;
-            }
-
-            $cpf = $linha['cpf'];
-            $nome = $linha['nome'];
-
-            // --- PROCESSAR ---
-            $usuario = Usuario::where('cpf', $cpf)
-                ->where('school_id', $schoolId)
-                ->first();
-
-            if (!$usuario) {
-                // Criar novo
-                $usuario = new Usuario();
-                $usuario->school_id = $schoolId;
-                $usuario->cpf = $cpf;
-                $usuario->nome_u = $nome;
-                $usuario->status = 1;
-                $usuario->is_super_master = 0;
-                $usuario->senha_hash = Hash::make($cpf);
-                $usuario->save();
-
-                $msg = "Usuário criado ({$cpf})";
-            } else {
-                $msg = "Usuário já existia";
-            }
-
-            // Garantir role professor
-            $roleProfessor = Role::where('role_name', 'professor')->first();
-
-            if ($roleProfessor) {
-                $usuario->roles()->syncWithoutDetaching([
-                    $roleProfessor->id => ['school_id' => $schoolId]
-                ]);
-            }
-
-            // Garantir registro na tabela professor
-            $prof = Professor::where('usuario_id', $usuario->id)
-                ->where('school_id', $schoolId)
-                ->first();
-
-            if (!$prof) {
-                $prof = new Professor();
-                $prof->usuario_id = $usuario->id;
-                $prof->school_id = $schoolId;
-                $prof->save();
-
-                $msg .= " + professor criado";
-            } else {
-                $msg .= " + professor já existia";
-            }
-
-            $resultado[] = [
-                'linha' => $linha['linha'],
-                'status' => 'sucesso',
-                'msg' => $msg
-            ];
-        }
-
-        return $resultado;
-    }
-
-
-    /* ===============================================================
-       FUNÇÕES AUXILIARES
-       =============================================================== */
-
-    private function linhaVazia($dados)
-    {
-        foreach ($dados as $v) {
-            if (trim($v) !== '') return false;
-        }
-        return true;
-    }
-
-    private function previewLinha($linha, $cpf, $nome, $status, $importar, $msg)
+    private function linhaPreview($linha, $cpf, $nome, $status, $importar, $msg)
     {
         return [
             'linha'    => $linha,
@@ -203,7 +195,113 @@ class CadastroLoteProfessorService
             'nome'     => $nome,
             'status'   => $status,
             'importar' => $importar,
-            'msg'      => $msg,
+            'msg'      => $msg
         ];
+    }
+
+    /**
+     * --------------------------------------------------------------------
+     *  IMPORTAÇÃO FINAL — SEGUINDO AS MESMAS REGRAS DO PREVIEW
+     * --------------------------------------------------------------------
+     */
+    public function importarLinhasValidadas($linhas)
+    {
+        $resultados = [];
+        $roleProfessorId = 4;
+
+        foreach ($linhas as $linha) {
+
+            if (!$linha['importar']) {
+                $resultados[] = [
+                    'status' => 'ignorado',
+                    'msg' => $linha['msg']
+                ];
+                continue;
+            }
+
+            $cpf  = $this->sanitizarCpf($linha['cpf']);
+            $nome = $this->sanitizarNome($linha['nome']);
+
+            $usuario = Usuario::where('cpf', $cpf)->first();
+
+            if ($usuario) {
+
+                // Já é professor?
+                $jaProfessor = Professor::where('usuario_id', $usuario->id)
+                    ->where('school_id', $this->schoolId)
+                    ->exists();
+
+                if ($jaProfessor) {
+                    $resultados[] = [
+                        'status' => 'sucesso',
+                        'msg'    => "Já era professor nesta escola (nenhuma ação necessária)"
+                    ];
+                    continue;
+                }
+
+                // Já tem role professor?
+                $jaTemRole = UsuarioRole::where('usuario_id', $usuario->id)
+                    ->where('school_id', $this->schoolId)
+                    ->where('role_id', $roleProfessorId)
+                    ->exists();
+
+                if ($jaTemRole) {
+                    $resultados[] = [
+                        'status' => 'sucesso',
+                        'msg'    => "Já possuía role professor nesta escola (nenhuma ação necessária)"
+                    ];
+                    continue;
+                }
+
+                // Vincular role + professor
+                UsuarioRole::firstOrCreate([
+                    'usuario_id' => $usuario->id,
+                    'role_id'    => $roleProfessorId,
+                    'school_id'  => $this->schoolId,
+                ]);
+
+                Professor::firstOrCreate([
+                    'usuario_id' => $usuario->id,
+                    'school_id'  => $this->schoolId,
+                ]);
+
+                $resultados[] = [
+                    'status' => 'sucesso',
+                    'msg'    => "Usuário já existia em outra escola + vinculado como professor"
+                ];
+                continue;
+            }
+
+            /**
+             *  Criar novo usuário
+             */
+            $usuario = Usuario::create([
+                'cpf'        => $cpf,
+                'nome_u'     => $nome,
+                'school_id'  => $this->schoolId,
+                'senha_hash' => Hash::make($cpf),
+                'status'     => 1,
+            ]);
+
+            // Criar role
+            UsuarioRole::create([
+                'usuario_id' => $usuario->id,
+                'role_id'    => $roleProfessorId,
+                'school_id'  => $this->schoolId,
+            ]);
+
+            // Criar professor
+            Professor::create([
+                'usuario_id' => $usuario->id,
+                'school_id'  => $this->schoolId,
+            ]);
+
+            $resultados[] = [
+                'status' => 'sucesso',
+                'msg'    => "Usuário criado + vinculado como professor"
+            ];
+        }
+
+        return $resultados;
     }
 }

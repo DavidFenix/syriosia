@@ -2,16 +2,29 @@
 
 @section('content')
 <div class="container">
-    <h1>Pré-visualização da Importação</h1>
 
-    <form method="POST" action="{{ route('escola.professores.lote.importar') }}">
-        @csrf
+    <h1 class="mb-4">📋 Pré-visualização da Importação</h1>
 
-        <input type="hidden" name="dados"
-               value="{{ htmlspecialchars(json_encode($preview), ENT_QUOTES, 'UTF-8') }}">
+    <div class="alert alert-info">
+        Confira os dados antes de confirmar. Linhas com erro não serão importadas.
+    </div>
 
-        <table class="table table-bordered">
-            <thead>
+    @php
+        $total = count($linhas);
+        $importarCount = collect($linhas)->where('importar', true)->count();
+    @endphp
+
+    <div class="card mb-4">
+        <div class="card-body">
+            <strong>Total de linhas:</strong> {{ $total }} <br>
+            <strong>A serem importadas:</strong>
+                <span class="text-success">{{ $importarCount }}</span>
+        </div>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-bordered table-sm align-middle text-center">
+            <thead class="table-light">
                 <tr>
                     <th>Linha</th>
                     <th>CPF</th>
@@ -20,36 +33,61 @@
                     <th>Mensagem</th>
                 </tr>
             </thead>
-
             <tbody>
-            @foreach($preview as $linha)
+
+            @foreach($linhas as $linha)
                 @php
-                    $class = $linha['importar']
-                        ? 'table-success'
-                        : ($linha['status'] === 'ignorado' ? 'table-warning' : 'table-danger');
+                    $classe = match($linha['status']) {
+                        'ok'       => 'table-success',
+                        'info'     => 'table-primary',
+                        'ignorado' => 'table-warning',
+                        'erro'     => 'table-danger',
+                        default    => '',
+                    };
+
+                    $icone = match($linha['status']) {
+                        'ok'       => '✔️',
+                        'info'     => '🔵',
+                        'ignorado' => '🟡',
+                        'erro'     => '❌',
+                        default    => '',
+                    };
                 @endphp
 
-                <tr class="{{ $class }}">
+                <tr class="{{ $classe }}">
                     <td>{{ $linha['linha'] }}</td>
                     <td>{{ $linha['cpf'] }}</td>
                     <td>{{ $linha['nome'] }}</td>
-                    <td>{{ ucfirst($linha['status']) }}</td>
+                    <td>{{ $icone }} {{ strtoupper($linha['status']) }}</td>
                     <td>{{ $linha['msg'] }}</td>
                 </tr>
             @endforeach
+
             </tbody>
         </table>
+    </div>
+
+    <div class="d-flex justify-content-between mt-4">
 
         <a href="{{ route('escola.professores.lote.index') }}" class="btn btn-secondary">
-            ← Cancelar
+            ⬅ Voltar
         </a>
 
-        @if( collect($preview)->where('importar', true)->count() > 0 )
-            <button class="btn btn-primary">
-                ✔ Confirmar Importação
+        @if($importarCount > 0)
+            <form action="{{ route('escola.professores.lote.importar') }}" method="POST">
+                @csrf
+                <input type="hidden" name="linhas" value="{{ base64_encode(json_encode($linhas)) }}">
+                <button type="submit" class="btn btn-success">
+                    ✔ Confirmar Importação
+                </button>
+            </form>
+        @else
+            <button class="btn btn-secondary" disabled>
+                Nenhuma linha válida para importar
             </button>
         @endif
-    </form>
+
+    </div>
 
 </div>
 @endsection

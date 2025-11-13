@@ -53,6 +53,18 @@
             </a>
         </div>
 
+        {{-- 📥 Importar Professores em Lote --}}
+        <div class="col-md-3 col-sm-6">
+            <a href="{{ route('escola.professores.lote.index') }}" class="text-decoration-none">
+                <div class="card shadow-sm h-100 border-0 hover-card bg-dark text-white text-center p-3">
+                    <div class="fs-1 mb-2">📥</div>
+                    <div class="fw-semibold">Importar Professores em Lote</div>
+                    <div class="fs-5 mt-1 fw-bold">CSV</div>
+                </div>
+            </a>
+        </div>
+
+
         {{-- 🎓 Alunos --}}
         <div class="col-md-3 col-sm-6">
             <a href="{{ route('escola.alunos.index') }}" class="text-decoration-none">
@@ -159,69 +171,3 @@
 
 </style>
 @endpush
-
-
-
-{{--
-@extends('layouts.app')
-
-@section('content')
-<div class="container">
-    <h1>Dashboard da Escola</h1>
-    <p>Bem-vindo, {{ Auth::user()->nome_u ?? 'Usuário' }}!</p>
-
-    <div class="row">
-        <div class="col-md-3 mb-3">
-            <a href="{{ route('escola.professores.index') }}" class="btn btn-primary w-100">
-                👨‍🏫 Professores
-            </a>
-        </div>
-        <div class="col-md-3 mb-3">
-            <a href="{{ route('escola.alunos.index') }}" class="btn btn-success w-100">
-                👩‍🎓 Alunos
-            </a>
-        </div>
-        <div class="col-md-3 mb-3">
-            <a href="{{ route('escola.disciplinas.index') }}" class="btn btn-warning w-100">
-                📚 Disciplinas
-            </a>
-        </div>
-        <div class="col-md-3 mb-3">
-            <a href="{{ route('escola.turmas.index') }}" class="btn btn-info w-100">
-                🏫 Turmas
-            </a>
-        </div>
-        <div class="col-md-3 mb-3">
-            <a href="{{ route('escola.enturmacao.index') }}" class="btn btn-warning w-100">
-                📚 Enturmação
-            </a>
-        </div>
-        <div class="col-md-3 mb-3">
-            <a href="{{ route('escola.lotacao.index') }}" class="btn btn-warning w-100">
-                📚 Lotação
-            </a>
-        </div>
-        <div class="col-md-3 mb-3">
-            <a href="{{ route('escola.motivos.index') }}" class="btn btn-warning w-100">
-                📚 Motivos de Ocorrência
-            </a>
-        </div>
-        <div class="col-md-3 mb-3">
-            <a href="{{ route('escola.alunos.fotos.lote') }}" class="btn btn-warning w-100">
-                📚 Upload em Massa de Fotos
-            </a>
-        </div>
-        <div class="col-md-3 mb-3">
-            <a href="{{ route('escola.regimento.index') }}" class="btn btn-warning w-100">
-                📚 Regimento Escolar
-            </a>
-        </div>
-        <div class="col-md-3 mb-3">
-            <a href="{{ route('escola.identidade.edit') }}" class="btn btn-warning w-100">
-                📚 Identidade da Escola
-            </a>
-        </div>
-    </div>
-</div>
-@endsection
---}}

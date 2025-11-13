@@ -254,13 +254,35 @@ Route::middleware(['auth'])->group(function () {
 */
 Route::middleware(['auth', 'ensure.context'])->group(function () {
 
+    //dashboard global que direciona corretamente baseando-se na current_role da sessão
+    Route::get('/dashboard', function () {
+
+        // Se existir flash ANTES de entrar nessa rota, vamos preservar
+        if (session()->has('error')) session()->keep('error');
+        if (session()->has('success')) session()->keep('success');
+
+        $role = session('current_role');
+
+        return match ($role) {
+            'master'     => redirect()->route('master.dashboard'),
+            'secretaria' => redirect()->route('secretaria.dashboard'),
+            'escola'     => redirect()->route('escola.dashboard'),
+            'professor'  => redirect()->route('professor.dashboard'),
+
+            default      => redirect('/')
+                ->with('error', 'Nenhum contexto encontrado. Selecione a escola e papel.')
+        };
+
+    })->name('dashboard');
+
+
     /*
     |--------------------------------------------------------------------------
     | Rotas do Master
     |--------------------------------------------------------------------------
     */
     Route::prefix('master')
-        ->middleware(['role:master'])
+        ->middleware(['ensure.role.master'])
         ->name('master.')
         ->group(function () {
             Route::get('dashboard', [MasterDashboardController::class, 'index'])->name('dashboard');
@@ -303,7 +325,7 @@ Route::middleware(['auth', 'ensure.context'])->group(function () {
     |--------------------------------------------------------------------------
     */
     Route::prefix('secretaria')
-        ->middleware(['role:secretaria'])
+        ->middleware(['ensure.role.secretaria'])
         ->name('secretaria.')
         ->group(function () {
             Route::get('/', fn () => redirect()->route('secretaria.escolas.index'))->name('dashboard');
@@ -326,7 +348,7 @@ Route::middleware(['auth', 'ensure.context'])->group(function () {
     |--------------------------------------------------------------------------
     */
     Route::prefix('escola')
-        ->middleware(['role:escola'])
+        ->middleware(['ensure.role.escola'])
         ->name('escola.')
         ->group(function () {
             Route::get('/', fn () => redirect()->route('escola.dashboard'));
@@ -405,24 +427,16 @@ Route::middleware(['auth', 'ensure.context'])->group(function () {
                 Route::get('/', [CadastroLoteProfessorController::class, 'index'])
                     ->name('professores.lote.index');
 
+                Route::get('/modelo', [CadastroLoteProfessorController::class, 'modelo'])
+                    ->name('professores.lote.modelo');
+
                 Route::post('/preview', [CadastroLoteProfessorController::class, 'preview'])
                     ->name('professores.lote.preview');
 
-                Route::post('/importar', [CadastroLoteProfessorController::class, 'importarConfirmado'])
+                Route::post('/importar', [CadastroLoteProfessorController::class, 'importar'])
                     ->name('professores.lote.importar');
-
-                Route::get('/modelo', [CadastroLoteProfessorController::class, 'modelo'])
-                    ->name('professores.lote.modelo');
             });
-
-
-           
-
-
-
-
     });
-
 
     /*
     |--------------------------------------------------------------------------
@@ -430,7 +444,7 @@ Route::middleware(['auth', 'ensure.context'])->group(function () {
     |--------------------------------------------------------------------------
     */
     Route::prefix('professor')
-        ->middleware(['role:professor'])
+        ->middleware(['ensure.role.professor'])
         ->name('professor.')
         ->group(function () {
 
