@@ -68,6 +68,7 @@
                             <li><a class="dropdown-item" href="{{ route('escola.professores.index') }}">Professores</a></li>
                             <li><a class="dropdown-item" href="{{ route('escola.professores.lote.index') }}">Importar Professores em Lote</a></li>
                             <li><a class="dropdown-item" href="{{ route('escola.alunos.index') }}">Alunos</a></li>
+                            <li><a class="dropdown-item" href="{{ route('escola.alunos.lote.index') }}">Importar Alunos em Lote</a></li>
                         </ul>
                     </li>
 

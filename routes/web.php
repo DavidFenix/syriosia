@@ -49,7 +49,7 @@ use App\Http\Controllers\Professor\{
 };
 
 use App\Http\Controllers\Escola\CadastroLoteProfessorController;
-
+use App\Http\Controllers\Escola\CadastroLoteAlunoController;
 
 //rotas de testes
     Route::get('/', function () {
@@ -436,6 +436,24 @@ Route::middleware(['auth', 'ensure.context'])->group(function () {
                 Route::post('/importar', [CadastroLoteProfessorController::class, 'importar'])
                     ->name('professores.lote.importar');
             });
+
+            // cadastro em lote de alunos (duas etapas)
+            Route::prefix('alunos-lote')->group(function () {
+
+                Route::get('/', [CadastroLoteAlunoController::class, 'index'])
+                    ->name('alunos.lote.index');
+
+                Route::get('/modelo', [CadastroLoteAlunoController::class, 'modelo'])
+                    ->name('alunos.lote.modelo');
+
+                Route::post('/preview', [CadastroLoteAlunoController::class, 'preview'])
+                    ->name('alunos.lote.preview');
+
+                Route::post('/importar', [CadastroLoteAlunoController::class, 'importar'])
+                    ->name('alunos.lote.importar');
+            });
+
+
     });
 
     /*
