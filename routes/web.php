@@ -50,6 +50,7 @@ use App\Http\Controllers\Professor\{
 
 use App\Http\Controllers\Escola\CadastroLoteProfessorController;
 use App\Http\Controllers\Escola\CadastroLoteAlunoController;
+use App\Http\Controllers\Escola\CadastroLoteDisciplinaController;
 
 //rotas de testes
     Route::get('/', function () {
@@ -452,6 +453,22 @@ Route::middleware(['auth', 'ensure.context'])->group(function () {
                 Route::post('/importar', [CadastroLoteAlunoController::class, 'importar'])
                     ->name('alunos.lote.importar');
             });
+
+            Route::prefix('disciplinas-lote')->group(function () {
+
+                Route::get('/', [CadastroLoteDisciplinaController::class, 'index'])
+                    ->name('disciplinas.lote.index');
+
+                Route::get('/modelo', [CadastroLoteDisciplinaController::class, 'modelo'])
+                    ->name('disciplinas.lote.modelo');
+
+                Route::post('/preview', [CadastroLoteDisciplinaController::class, 'preview'])
+                    ->name('disciplinas.lote.preview');
+
+                Route::post('/importar', [CadastroLoteDisciplinaController::class, 'importar'])
+                    ->name('disciplinas.lote.importar');
+            });
+
 
 
     });

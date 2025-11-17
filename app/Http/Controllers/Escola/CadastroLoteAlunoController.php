@@ -56,7 +56,7 @@ class CadastroLoteAlunoController extends Controller
             header('Content-Type: text/csv; charset=UTF-8');
             echo "\xEF\xBB\xBF"; // BOM
 
-            echo "sep=;\n";
+            //echo "sep=;\n";
 
             $out = fopen('php://output', 'w');
 

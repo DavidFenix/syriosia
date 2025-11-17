@@ -45,7 +45,7 @@ $(document).ready(function () {
     // Aplica o DataTable com filtro nas colunas Nome(1), CPF(2), Status(3), Roles(4)
     initDataTable('#tabela-enturmacao', {
         order: [[2, 'asc'],[1, 'asc']],
-        pageLength: 10
+        pageLength: 25
     }, [1, 2, 3, 4]);
 });
 </script>

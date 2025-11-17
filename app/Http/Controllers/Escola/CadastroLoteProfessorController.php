@@ -74,7 +74,8 @@ class CadastroLoteProfessorController extends Controller
         if ($ret = $this->validarAcesso()) return $ret;
 
         return response()->streamDownload(function () {
-            echo "sep=;\ncpf;nome;role\ncpf1;nome1;professor\n";
+            //echo "sep=;\ncpf;nome;role\ncpf1;nome1;professor\n";
+            echo "cpf;nome;role\ncpf1;nome1;professor\n";
         }, 'modelo_professores.csv');
     }
 

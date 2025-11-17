@@ -46,6 +46,7 @@
 $(document).ready(function () {
     initDataTable('#tabela-disciplinas', {
         order: [[2, 'asc']],
+        pageLength: 25,
         columnDefs: [
             { width: '5%', targets: 0 },
             { width: '10%', targets: 1 },
