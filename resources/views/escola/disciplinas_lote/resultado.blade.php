@@ -32,7 +32,7 @@
             <tr class="{{ $class }}">
                 <td>{{ $r['linha'] }}</td>
                 <td>{{ $r['abr'] }}</td>
-                <td>{{ $r['descr'] }}</td>
+                <td>{{ $r['descr_d'] }}</td>
                 <td>{{ ucfirst($r['status']) }}</td>
                 <td>{{ $r['msg'] }}</td>
             </tr>

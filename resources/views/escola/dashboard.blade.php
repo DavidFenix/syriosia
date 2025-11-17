@@ -53,18 +53,6 @@
             </a>
         </div>
 
-        {{-- 📥 Importar Professores em Lote --}}
-        <div class="col-md-3 col-sm-6">
-            <a href="{{ route('escola.professores.lote.index') }}" class="text-decoration-none">
-                <div class="card shadow-sm h-100 border-0 hover-card bg-dark text-white text-center p-3">
-                    <div class="fs-1 mb-2">📥</div>
-                    <div class="fw-semibold">Importar Professores em Lote</div>
-                    <div class="fs-5 mt-1 fw-bold">CSV</div>
-                </div>
-            </a>
-        </div>
-
-
         {{-- 🎓 Alunos --}}
         <div class="col-md-3 col-sm-6">
             <a href="{{ route('escola.alunos.index') }}" class="text-decoration-none">
@@ -72,17 +60,6 @@
                     <div class="fs-1 mb-2">🎓</div>
                     <div class="fw-semibold">Alunos</div>
                     <div class="fs-1 mt-1 fw-bold">{{ $totalAlunos }}</div>
-                </div>
-            </a>
-        </div>
-
-        {{-- 📥 Importar Alunos em Lote --}}
-        <div class="col-md-3 col-sm-6">
-            <a href="{{ route('escola.alunos.lote.index') }}" class="text-decoration-none">
-                <div class="card shadow-sm h-100 border-0 hover-card bg-dark text-white text-center p-3">
-                    <div class="fs-1 mb-2">📥</div>
-                    <div class="fw-semibold">Importar Alunos em Lote</div>
-                    <div class="fs-5 mt-1 fw-bold">CSV</div>
                 </div>
             </a>
         </div>
