@@ -9,11 +9,12 @@
         <strong>Legenda:</strong>
         <ul class="mb-0">
             <li><span class="badge bg-success">OK</span> → linha válida, será importada</li>
-            <li><span class="badge bg-danger">Erro</span> → linha inválida, será ignorada</li>
+            <li><span class="badge bg-warning text-dark">Aviso</span> → linha informativa, não será importada</li>
+            <li><span class="badge bg-danger">Erro</span> → linha inválida, não será importada</li>
         </ul>
     </div>
 
-    <a href="{{ route('escola.ofertas.lote.index') }}" class="btn btn-outline-secondary btn-sm">
+    <a href="{{ route('escola.ofertas.lote.index') }}" class="btn btn-outline-secondary btn-sm mt-2">
         ⬅️ Enviar outro arquivo
     </a>
 
@@ -34,49 +35,67 @@
             </thead>
 
             <tbody>
-                @foreach($linhas as $l)
+                @forelse($linhas as $l)
                     @php
-                        $rowClass = $l['status'] === 'erro' ? 'table-danger' : 'table-success';
+                        $rowClass = match($l['status']) {
+                            'erro'  => 'table-danger',
+                            'aviso' => 'table-warning',
+                            default => 'table-success',
+                        };
                     @endphp
 
                     <tr class="{{ $rowClass }}">
                         <td>{{ $l['linha'] }}</td>
                         <td>{{ $l['cpf'] }}</td>
-                        <td>{{ $l['professor'] }}</td>
+                        <td>{{ $l['nome'] }}</td>
                         <td>{{ $l['disciplina_id'] }}</td>
-                        <td>{{ $l['disciplina'] }}</td>
+                        <td>{{ $l['descr_d'] }}</td>
                         <td>{{ $l['turma_id'] }}</td>
                         <td>{{ $l['serie_turma'] }}</td>
                         <td>
                             @if($l['status'] === 'erro')
                                 <span class="badge bg-danger">Erro</span>
+                            @elseif($l['status'] === 'aviso')
+                                <span class="badge bg-warning text-dark">Aviso</span>
                             @else
                                 <span class="badge bg-success">OK</span>
                             @endif
                         </td>
                         <td>{{ $l['msg'] }}</td>
                     </tr>
-                @endforeach
+                @empty
+                    <tr>
+                        <td colspan="9" class="text-center text-muted">
+                            Nenhuma linha encontrada no arquivo.
+                        </td>
+                    </tr>
+                @endforelse
             </tbody>
         </table>
     </div>
 
     @php
-        $temImportavel = collect($linhas)->contains(fn($l) => $l['status'] === 'ok');
+        // Usa a flag importavel em vez de só status
+        $temImportavel = collect($linhas)->contains(fn($l) => !empty($l['importavel']) && $l['status'] !== 'erro');
     @endphp
 
     @if($temImportavel)
+        <div class="alert alert-warning mt-3">
+            As linhas marcadas como <span class="badge bg-success">OK</span> serão importadas.
+            Avisos e erros serão ignorados.
+        </div>
+
         <form action="{{ route('escola.ofertas.lote.importar') }}" method="POST">
             @csrf
             <input type="hidden" name="linhas" value="{{ $payload }}">
 
-            <button class="btn btn-primary mt-3">
+            <button class="btn btn-primary mt-2">
                 ✅ Confirmar Importação
             </button>
         </form>
     @else
         <div class="alert alert-danger mt-3">
-            Nenhuma linha válida para importação.
+            Não há linhas válidas para importação.
         </div>
     @endif
 

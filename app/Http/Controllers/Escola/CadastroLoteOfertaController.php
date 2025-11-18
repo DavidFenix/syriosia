@@ -32,8 +32,7 @@ class CadastroLoteOfertaController extends Controller
             ->get();
 
         $disciplinas = Disciplina::where('school_id', $schoolId)->get();
-
-        $turmas = Turma::where('school_id', $schoolId)->get();
+        $turmas      = Turma::where('school_id', $schoolId)->get();
 
         return view('escola.ofertas_lote.index', compact(
             'professores',
@@ -51,17 +50,17 @@ class CadastroLoteOfertaController extends Controller
             ->get();
 
         $disciplinas = Disciplina::where('school_id', $schoolId)->get();
-
-        $turmas = Turma::where('school_id', $schoolId)->get();
+        $turmas      = Turma::where('school_id', $schoolId)->get();
 
         return response()->streamDownload(function () use ($professores, $disciplinas, $turmas) {
 
             header('Content-Type: text/csv; charset=UTF-8');
-            echo "\xEF\xBB\xBF"; // BOM UTF-8
-            echo "sep=;\n";
+            echo "\xEF\xBB\xBF";     // BOM UTF-8
+            echo "sep=;\n";          // dica para Excel
 
             $out = fopen('php://output', 'w');
 
+            // Cabeçalho
             fputcsv($out, [
                 'cpf_professor',
                 'nome_professor',
@@ -71,20 +70,28 @@ class CadastroLoteOfertaController extends Controller
                 'serie_turma'
             ], ';');
 
-            foreach ($professores as $p) {
-                foreach ($disciplinas as $d) {
-                    foreach ($turmas as $t) {
+            // Quantidades
+            $nP = max(1, $professores->count());
+            $nD = max(1, $disciplinas->count());
+            $nT = max(1, $turmas->count());
 
-                        fputcsv($out, [
-                            $p->usuario->cpf,
-                            $p->usuario->nome_u,
-                            $d->id,
-                            $d->descr_d,
-                            $t->id,
-                            $t->serie_turma,
-                        ], ';');
-                    }
-                }
+            // Total de linhas (loop circular)
+            $maxRows = max($nP, $nD, $nT);
+
+            for ($i = 0; $i < $maxRows; $i++) {
+
+                $p = $professores[$i % $nP];
+                $d = $disciplinas[$i % $nD];
+                $t = $turmas[$i % $nT];
+
+                fputcsv($out, [
+                    $p->usuario->cpf ?? '',
+                    $p->usuario->nome_u ?? '',
+                    $d->id,
+                    $d->descr_d,
+                    $t->id,
+                    $t->serie_turma,
+                ], ';');
             }
 
             fclose($out);
@@ -99,11 +106,9 @@ class CadastroLoteOfertaController extends Controller
         ]);
 
         $schoolId = session('current_school_id');
+        $service  = new CadastroLoteOfertaService($schoolId);
 
-        $service = new CadastroLoteOfertaService($schoolId);
-
-        $linhas = $service->previewCSV($request->file('arquivo'));
-
+        $linhas  = $service->previewCSV($request->file('arquivo'));
         $payload = base64_encode(json_encode($linhas));
 
         return view('escola.ofertas_lote.preview', compact('linhas', 'payload'));
@@ -120,14 +125,14 @@ class CadastroLoteOfertaController extends Controller
         if (!is_array($decoded)) {
             return redirect()
                 ->route('escola.ofertas.lote.index')
-                ->with('error', 'Dados inválidos.');
+                ->with('error', 'Dados inválidos. Envie o arquivo novamente.');
         }
 
         $schoolId = session('current_school_id');
+        $service  = new CadastroLoteOfertaService($schoolId);
 
-        $service = new CadastroLoteOfertaService($schoolId);
-
-        $resultado = $service->importarLinhas($decoded);
+        // 🔴 Aqui estava o nome errado (importarLinhas). Agora usamos importar().
+        $resultado = $service->importar($decoded);
 
         return view('escola.ofertas_lote.resultado', compact('resultado'));
     }

@@ -13,7 +13,7 @@
         <strong>Passo a passo:</strong>
         <ol class="mb-0">
             <li>Baixe o modelo CSV.</li>
-            <li>Preencha CPF do professor, disciplina_id, turma_id.</li>
+            <li>Preencha CPF do professor, <code>disciplina_id</code> e <code>turma_id</code>.</li>
             <li>Envie o arquivo para pré-visualização.</li>
         </ol>
     </div>
@@ -28,10 +28,10 @@
         <div class="card-header fw-semibold">Enviar arquivo CSV</div>
 
         <div class="card-body">
-            <form action="{{ route('escola.ofertas.lote.preview') }}" 
-                  method="POST" 
+            <form action="{{ route('escola.ofertas.lote.preview') }}"
+                  method="POST"
                   enctype="multipart/form-data">
-                
+
                 @csrf
 
                 <div class="mb-3">
@@ -46,7 +46,7 @@
                     @enderror
 
                     <small class="text-muted">
-                        Formato: CSV separado por ponto e vírgula (<code>;</code>)
+                        Formato: CSV separado por ponto e vírgula (<code>;</code>).
                     </small>
                 </div>
 

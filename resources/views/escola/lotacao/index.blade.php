@@ -11,7 +11,7 @@
                 <option value="">— Selecione —</option>
                 @foreach($professores as $p)
                     <option value="{{ $p->id }}" {{ $professorSelecionado == $p->id ? 'selected' : '' }}>
-                        {{ $p->usuario->nome_u ?? 'Professor sem usuário' }}
+                        {{ $p->usuario->cpf.'::'.$p->usuario->nome_u ?? 'Professor sem usuário' }}
                     </option>
                 @endforeach
             </select>
