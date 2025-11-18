@@ -80,6 +80,7 @@
                             <li><a class="dropdown-item" href="{{ route('escola.disciplinas.index') }}">Disciplinas</a></li>
                             <li><a class="dropdown-item" href="{{ route('escola.disciplinas.lote.index') }}">Importar Disciplinas em Lote</a></li>
                             <li><a class="dropdown-item" href="{{ route('escola.turmas.index') }}">Turmas</a></li>
+                            <li><a class="dropdown-item" href="{{ route('escola.turmas.lote.index') }}">Importar Turmas em Lote</a></li>
                             <li><a class="dropdown-item" href="{{ route('escola.enturmacao.index') }}">Enturmação</a></li>
                             <li><a class="dropdown-item" href="{{ route('escola.lotacao.index') }}">Lotação</a></li>
                             <li><a class="dropdown-item" href="{{ route('escola.ofertas.lote.index') }}">Importar Lotação em Lote</a></li>
