@@ -15,7 +15,7 @@
                     : asset('images/default-logo.png');  // fallback real
             @endphp
 
-            <img src="{{ $logoUrl }}" width="200" height="200" alt="Logo Syrios">
+            <img src="{{ $logoUrl }}" width="150" height="150" alt="Logo Syrios">
         </div>
 
 
@@ -95,7 +95,7 @@
 
         {{-- Rodapé --}}
         <div class="text-center mt-4 text-muted small fs-6">
-            © 2025 — {{ config('app.school_name', 'EEMTI Dep. Ubiratan Diniz de Aguiar') }}<br>
+            © 2025 — {{ config('app.school_name', 'Syrios') }}<br>
             Todos os direitos reservados.
         </div>
 
@@ -107,13 +107,13 @@
 @push('styles')
 <style>
     .input-login-top {
-        height: 80px;
+        height: 70px;
         /*font-size: 1.25rem;*/
         border-radius: 10px 10px 0 0; /* só superior arredondado */
     }
 
     .input-login-bottom {
-        height: 80px;
+        height: 70px;
         /*font-size: 1.25rem;*/
         border-radius: 0 0 10px 10px; /* só inferior arredondado */
         /*border-top: none; /* unir com o campo acima */*/
