@@ -11,6 +11,7 @@
 
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top shadow">
     <div class="container-fluid">
+
         <a class="navbar-brand fw-bold" href="{{ dashboard_route() }}">⚡ Syrios</a>
 
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarMaster"
@@ -119,22 +120,47 @@
 
             </ul>
 
+
             {{-- ========================================================= --}}
             {{-- 🎯 CONTEXTO + USUÁRIO + LOGOUT --}}
             {{-- ========================================================= --}}
             <ul class="navbar-nav ms-auto">
+                
+                @php
+                    $schoolId = session('current_school_id');
+
+                    // Caminho esperado da logo da escola
+                    $logoRelPath = "storage/logos/{$schoolId}_logo.png";
+                    $logoAbsPath = public_path($logoRelPath);
+
+                    // Se a logo da escola existir, usa ela. Caso contrário usa a logo do Syrios.
+                    $logoUrl = file_exists($logoAbsPath)
+                        ? asset($logoRelPath)
+                        : '';
+                @endphp
+
                 @auth
                     {{-- Contexto atual --}}
                     @if(session('current_role') && session('current_school_id'))
                         <li class="nav-item dropdown">
+                            
                             <a class="nav-link dropdown-toggle text-warning" href="#" role="button" data-bs-toggle="dropdown">
-                                🎯 {{ ucfirst(session('current_role')) }}
+                                
+                                @if($logoUrl)
+                                   🎯 {{ ucfirst(session('current_role')) }} &nbsp;
+                                   <img src="{{ $logoUrl }}" alt="Logo" class="rounded-circle me-2" width="36" height="36" style="object-fit: cover;">
+                                @else
+                                    🎯 {{ ucfirst(session('current_role')) }} -
+                                @endif
+
                                 @php
                                     $escolaAtual = \App\Models\Escola::find(session('current_school_id'));
                                 @endphp
+
                                 @if($escolaAtual)
-                                    — {{ $escolaAtual->nome_e }}
+                                    {{ $escolaAtual->nome_e }}
                                 @endif
+
                             </a>
                             <ul class="dropdown-menu dropdown-menu-end">
                                 <li><a class="dropdown-item" href="{{ route('choose.school') }}">🔄 Trocar de contexto</a></li>
