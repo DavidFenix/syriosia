@@ -8,12 +8,9 @@
     {{-- ===================== INFORMAÇÕES DO ALUNO ===================== --}}
     <div class="card shadow-sm border-0 mb-4">
         <div class="card-body d-flex align-items-center">
+            
             @php
-                $fotoNome = $aluno->school_id . '_' . $aluno->matricula . '.png';
-                $fotoPath = public_path('storage/img-user/' . $fotoNome);
-                $fotoUrl = file_exists($fotoPath)
-                    ? asset('storage/img-user/' . $fotoNome)
-                    : asset('storage/img-user/padrao.png');
+                $fotoUrl = syrios_user_photo($aluno->matricula, $aluno->school_id);
             @endphp
 
             <img src="{{ $fotoUrl }}" class="rounded-circle me-3"

@@ -27,7 +27,7 @@
             @if($escola->logo_path)
                 <div class="mt-3">
                     <p>Logo atual:</p>
-                    <img src="{{ asset('storage/'.$escola->logo_path) }}" 
+                    <img src="{{ syrios_school_logo($escola->id) }}"
                          alt="Logo atual" class="img-thumbnail" style="max-height:100px;">
                 </div>
             @endif

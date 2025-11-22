@@ -128,16 +128,9 @@
                 
                 @php
                     $schoolId = session('current_school_id');
-
-                    // Caminho esperado da logo da escola
-                    $logoRelPath = "storage/logos/{$schoolId}_logo.png";
-                    $logoAbsPath = public_path($logoRelPath);
-
-                    // Se a logo da escola existir, usa ela. Caso contrário usa a logo do Syrios.
-                    $logoUrl = file_exists($logoAbsPath)
-                        ? asset($logoRelPath)
-                        : '';
+                    $logoUrl = syrios_school_logo($schoolId);
                 @endphp
+
 
                 @auth
                     {{-- Contexto atual --}}

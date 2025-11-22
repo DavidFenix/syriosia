@@ -20,13 +20,10 @@
         <tbody>
         @forelse($alunos as $index => $a)
             @php
-                $fotoNome = session('current_school_id').'_'.$a->matricula . '.png';
-                $fotoRelPath = 'storage/img-user/' . $fotoNome;
-                $fotoAbsoluta = public_path($fotoRelPath);
-                $fotoUrl = file_exists($fotoAbsoluta)
-                        ? asset($fotoRelPath)
-                        : asset('storage/img-user/padrao.png');
 
+                // Foto do aluno usando a função universal
+                $fotoUrl = syrios_user_photo($a->matricula, session('current_school_id'));
+                
                 // Busca enturmação mais recente da escola atual
                 $enturmacaoAtual = \App\Models\Enturmacao::where('school_id', session('current_school_id'))
                     ->where('aluno_id', $a->id)
@@ -120,14 +117,10 @@
         <tbody>
         @forelse($alunos as $index => $a)
             @php
-                $fotoNome = $a->matricula . '.png';
-                $fotoRelPath = 'storage/img-user/' . $fotoNome;
-                $fotoAbsoluta = public_path($fotoRelPath);
-
-                // se o arquivo existe, usa ele; senão, cai na imagem padrão
-                $fotoUrl = file_exists($fotoAbsoluta)
-                        ? asset($fotoRelPath)
-                        : asset('storage/img-user/padrao.png');
+                
+                // Foto do aluno (caso o school_id venha do próprio aluno)
+                $fotoUrl = syrios_user_photo($a->matricula, $a->school_id ?? session('current_school_id'));
+            
             @endphp
 
             <tr>

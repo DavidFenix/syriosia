@@ -8,30 +8,10 @@
         {{-- Foto circular --}}
         <div class="text-center mb-3">
 
-            {{--
             @php
-                $logoStorage = public_path('storage/logos/syrios.png');
-                $logoUrl = file_exists($logoStorage)
-                    ? asset('storage/logos/syrios.png')
-                    : asset('images/default-logo.png');  // fallback real
+                // Usa diretamente a função universal para logo da escola 0 (logo principal)
+                $logoUrl = syrios_school_logo(0);
             @endphp
-            --}}
-
-            @php
-                // Caminho REAL onde o Laravel salva no storage
-                $logoStorage = storage_path('app/public/logos/syrios.png');
-
-                // Se o arquivo existe dentro da storage
-                if (file_exists($logoStorage)) {
-                    // Usa nossa função universal, que funciona tanto no Railway
-                    // quanto no InfinityFree e Localhost
-                    $logoUrl = storage_syrios_url('logos/syrios.png');
-                } else {
-                    // fallback
-                    $logoUrl = asset('images/default-logo.png');
-                }
-            @endphp
-
 
             <img src="{{ $logoUrl }}" width="150" height="150" alt="Logo Syrios">
         </div>

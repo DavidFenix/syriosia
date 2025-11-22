@@ -70,14 +70,11 @@
             </thead>
             <tbody>
                 @forelse($alunos as $index => $a)
+                    
                     @php
-                        $fotoNome = $a->school_id . '_' . $a->matricula . '.png';
-                        $fotoRelPath = 'storage/img-user/' . $fotoNome;
-                        $fotoAbsoluta = public_path($fotoRelPath);
-                        $fotoUrl = file_exists($fotoAbsoluta)
-                            ? asset($fotoRelPath)
-                            : asset('storage/img-user/padrao.png');
+                        $fotoUrl = syrios_user_photo($a->matricula, $a->school_id);
                     @endphp
+
                     <tr>
                         <td>{{ $index + 1 }}</td>
 

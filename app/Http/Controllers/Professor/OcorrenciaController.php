@@ -236,65 +236,99 @@ class OcorrenciaController extends Controller
             $aluno->enturmacao()->with('turma')->first()
         )->turma;
 
-        /*
-        |--------------------------------------------------------------------------
-        | 1. LOGO DA ESCOLA — detectando PNG/JPG automaticamente
-        |--------------------------------------------------------------------------
-        */
-        $logoBase = public_path("storage/logos/");
-        $logoName = $escola->logo_path ?? '';
+        // /*
+        // |--------------------------------------------------------------------------
+        // | 1. LOGO DA ESCOLA — detectando PNG/JPG automaticamente
+        // |--------------------------------------------------------------------------
+        // */
+        // $logoBase = public_path("storage/logos/");
+        // $logoName = $escola->logo_path ?? '';
 
-        $possiveisExt = [
-            $logoName,
-            pathinfo($logoName, PATHINFO_FILENAME).'.jpg',
-            pathinfo($logoName, PATHINFO_FILENAME).'.jpeg',
-            pathinfo($logoName, PATHINFO_FILENAME).'.png',
-        ];
+        // $possiveisExt = [
+        //     $logoName,
+        //     pathinfo($logoName, PATHINFO_FILENAME).'.jpg',
+        //     pathinfo($logoName, PATHINFO_FILENAME).'.jpeg',
+        //     pathinfo($logoName, PATHINFO_FILENAME).'.png',
+        // ];
 
-        $logoFile = null;
+        // $logoFile = null;
 
-        foreach ($possiveisExt as $f) {
-            if ($f && file_exists($logoBase.$f)) {
-                $logoFile = $logoBase.$f;
-                break;
-            }
-        }
+        // foreach ($possiveisExt as $f) {
+        //     if ($f && file_exists($logoBase.$f)) {
+        //         $logoFile = $logoBase.$f;
+        //         break;
+        //     }
+        // }
 
-        if (!$logoFile) {
-            $logoFile = $logoBase.'padrao.jpg'; // mantenha em JPG
-        }
+        // if (!$logoFile) {
+        //     $logoFile = $logoBase.'padrao.jpg'; // mantenha em JPG
+        // }
 
-        /*
-        |--------------------------------------------------------------------------
-        | 2. FOTO DO ALUNO — idem
-        |--------------------------------------------------------------------------
-        */
-        $fotoBase = public_path("storage/img-user/");
-        $mat = $aluno->matricula;
-        $school = $aluno->school_id;
+        // /*
+        // |--------------------------------------------------------------------------
+        // | 2. FOTO DO ALUNO — idem
+        // |--------------------------------------------------------------------------
+        // */
+        // $fotoBase = public_path("storage/img-user/");
+        // $mat = $aluno->matricula;
+        // $school = $aluno->school_id;
 
-        // Lista de possíveis nomes de arquivo
-        $possiveisFotos = [
-            "{$school}_{$mat}.jpg",
-            "{$school}_{$mat}.jpeg",
-            "{$school}_{$mat}.png",
-            "{$mat}.jpg",
-            "{$mat}.jpeg",
-            "{$mat}.png",
-        ];
+        // // Lista de possíveis nomes de arquivo
+        // $possiveisFotos = [
+        //     "{$school}_{$mat}.jpg",
+        //     "{$school}_{$mat}.jpeg",
+        //     "{$school}_{$mat}.png",
+        //     "{$mat}.jpg",
+        //     "{$mat}.jpeg",
+        //     "{$mat}.png",
+        // ];
 
-        $fotoFile = null;
+        // $fotoFile = null;
 
-        foreach ($possiveisFotos as $f) {
-            if (file_exists($fotoBase.$f)) {
-                $fotoFile = $fotoBase.$f;
-                break;
-            }
-        }
+        // foreach ($possiveisFotos as $f) {
+        //     if (file_exists($fotoBase.$f)) {
+        //         $fotoFile = $fotoBase.$f;
+        //         break;
+        //     }
+        // }
 
-        if (!$fotoFile) {
-            $fotoFile = $fotoBase.'padrao.jpg';
-        }
+        // if (!$fotoFile) {
+        //     $fotoFile = $fotoBase.'padrao.jpg';
+        // }
+
+/*
+|--------------------------------------------------------------------------
+| 1. LOGO DA ESCOLA — usando helper universal e caminho absoluto
+|--------------------------------------------------------------------------
+*/
+
+$schoolId = session('current_school_id');
+
+// URL pública conforme o ambiente
+$logoWeb = syrios_school_logo($schoolId);
+
+// converte URL → caminho relativo seguro
+$relativeLogo = syrios_url_to_storage_relative($logoWeb);
+
+// converte relativo → absoluto
+$logoFile = storage_syrios_path($relativeLogo);
+
+// fallback se faltar
+if (!file_exists($logoFile)) {
+    $logoFile = storage_syrios_path("logos/syrios.png");
+}
+
+/*
+|--------------------------------------------------------------------------
+| 2. FOTO DO ALUNO — usando helper universal
+|--------------------------------------------------------------------------
+*/
+
+$fotoFile = syrios_user_photo_path($aluno->matricula, $aluno->school_id);
+
+// Aqui, $fotoFile já é um caminho absoluto real
+// e sempre EXISTE (porque tem fallback para img-user/padrao.png)
+
 
         /*
         |--------------------------------------------------------------------------
@@ -306,19 +340,29 @@ class OcorrenciaController extends Controller
             ->orderByDesc('created_at')
             ->get();
 
-        /*
-        |--------------------------------------------------------------------------
-        | PDF
-        |--------------------------------------------------------------------------
-        */
-        $pdf = Pdf::loadView('professor.ocorrencias.pdf_historico', [
-            'aluno'      => $aluno,
-            'escola'     => $escola,
-            'turma'      => $turma,
-            'ocorrencias'=> $ocorrencias,
-            'logoFile'   => "file://".$logoFile,
-            'fotoFile'   => "file://".$fotoFile,
-        ])->setPaper('a4');
+        // /*
+        // |--------------------------------------------------------------------------
+        // | PDF
+        // |--------------------------------------------------------------------------
+        // */
+        // $pdf = Pdf::loadView('professor.ocorrencias.pdf_historico', [
+        //     'aluno'      => $aluno,
+        //     'escola'     => $escola,
+        //     'turma'      => $turma,
+        //     'ocorrencias'=> $ocorrencias,
+        //     'logoFile'   => "file://".$logoFile,
+        //     'fotoFile'   => "file://".$fotoFile,
+        // ])->setPaper('a4');
+
+$pdf = Pdf::loadView('professor.ocorrencias.pdf_historico', [
+    'aluno'      => $aluno,
+    'escola'     => $escola,
+    'turma'      => $turma,
+    'ocorrencias'=> $ocorrencias,
+    'logoFile'   => $logoFile,   // já é caminho absoluto
+    'fotoFile'   => $fotoFile,   // já é caminho absoluto
+])->setPaper('a4');
+
 
         $content  = $pdf->output();
         $filename = "historico_ocorrencias_{$aluno->matricula}.pdf";

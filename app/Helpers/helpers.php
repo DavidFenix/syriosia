@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\URL;
 
 if (!function_exists('prefix')) {
     function prefix(string $basename = ''): string
@@ -243,11 +244,92 @@ if (!function_exists('sql_dump')) {
     }
 }
 
+/*
+|--------------------------------------------------------------------------
+| DETECÇÃO DO SERVIDOR
+|--------------------------------------------------------------------------
+*/
+
 if (!function_exists('is_infinityfree')) {
     function is_infinityfree() {
-        return str_contains($_SERVER['HTTP_HOST'] ?? '', 'rf.gd')
-            || str_contains($_SERVER['HTTP_HOST'] ?? '', 'epizy.com')
-            || str_contains($_SERVER['DOCUMENT_ROOT'] ?? '', '/htdocs/');
+        // 1º: se houver flag explícita no .env, ela manda em tudo
+        $flag = env('SYRIOS_INFINITYFREE');
+        if (!is_null($flag)) {
+            return (bool)$flag;
+        }
+
+        // 2º: fallback automático (caso você queira manter)
+        $host = $_SERVER['HTTP_HOST'] ?? '';
+        $root = $_SERVER['DOCUMENT_ROOT'] ?? '';
+
+        return str_contains($host, 'rf.gd')
+            || str_contains($host, 'epizy.com')
+            || str_contains($root, '/htdocs/');
+    }
+}
+
+
+// if (!function_exists('is_infinityfree')) {
+//     function is_infinityfree() {
+//         $host = $_SERVER['HTTP_HOST'] ?? '';
+//         $root = $_SERVER['DOCUMENT_ROOT'] ?? '';
+
+//         return str_contains($host, 'rf.gd')
+//             || str_contains($host, 'epizy.com')
+//             || str_contains($root, '/htdocs/');
+//     }
+// }
+
+
+/*
+|--------------------------------------------------------------------------
+| CAMINHOS DE ARQUIVOS DO STORAGE (ABSOLUTO E URL)
+|--------------------------------------------------------------------------
+*/
+
+// //guardando aqui pois vou fazer mudança perigosa
+// if (!function_exists('storage_syrios_path')) {
+//     /**
+//      * Retorna o caminho ABSOLUTO de um arquivo dentro de storage/app/public
+//      * Ex: storage_syrios_path("img-user/123.png")
+//      */
+//     function storage_syrios_path(string $path): string
+//     {
+//         return storage_path('app/public/' . ltrim($path, '/'));
+//     }
+// }
+
+// //guardando aqui pois vou fazer mudança perigosa
+// if (!function_exists('storage_syrios_url')) {
+//     /**
+//      * Retorna a URL pública correta do arquivo em QUALQUER servidor:
+//      * Railway → /storage/arquivo.png
+//      * InfinityFree → /syriosia/storage/app/public/arquivo.png
+//      */
+//     function storage_syrios_url(string $path): string
+//     {
+//         $path = ltrim($path, '/');
+
+//         // InfinityFree sempre precisa do prefixo "syriosia/storage/app/public"
+//         if (is_infinityfree()) {
+//             return url("syriosia/storage/app/public/{$path}");
+//         }
+
+//         // Railway, WAMP, VPS (symlink funcionando)
+//         return url("storage/{$path}");
+//     }
+// }
+
+if (!function_exists('storage_syrios_path')) {
+    function storage_syrios_path(string $path): string
+    {
+        // garante que "storage/" nunca apareça duplicado
+        $path = ltrim($path, '/');
+
+        // se vier "storage/logos/x.png", troca para "logos/x.png"
+        $path = preg_replace('#^storage/#', '', $path);
+
+        return storage_path('app/public/' . $path);
     }
 }
 
@@ -255,15 +337,192 @@ if (!function_exists('storage_syrios_url')) {
     function storage_syrios_url(string $path): string
     {
         $path = ltrim($path, '/');
+        $path = preg_replace('#^storage/#', '', $path); // remove duplicações
 
-        // 🔴 INFINITYFREE: usa o caminho real físico do projeto
         if (is_infinityfree()) {
+            // Sempre monta URL completa para bypass do .htaccess do InfinityFree
             return url("syriosia/storage/app/public/{$path}");
         }
 
-        // 🟢 RAILWAY / LOCAL / VPS: usa o storage normal (symlink funciona)
         return url("storage/{$path}");
     }
 }
+
+
+
+/*
+|--------------------------------------------------------------------------
+| LISTA GLOBAL DE EXTENSÕES PERMITIDAS
+|--------------------------------------------------------------------------
+*/
+if (!function_exists('syrios_valid_extensions')) {
+    function syrios_valid_extensions()
+    {
+        return ['png', 'jpg', 'jpeg', 'webp'];
+    }
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| LOCALIZAR CAMINHO FÍSICO DE ARQUIVO POR EXTENSÃO
+|--------------------------------------------------------------------------
+*/
+
+if (!function_exists('syrios_find_file')) {
+    /**
+     * Procura um arquivo em storage/app/public/<folder>/<base>.<ext>
+     * para QUALQUER extensão associada ao sistema.
+     *
+     * Retorna caminho absoluto OU null.
+     */
+    function syrios_find_file(string $folder, string $base)
+    {
+        foreach (syrios_valid_extensions() as $ext) {
+            $relative = "{$folder}/{$base}.{$ext}";
+            $absolute = storage_syrios_path($relative);
+
+            if (file_exists($absolute)) {
+                return $absolute;
+            }
+        }
+
+        return null;
+    }
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| FOTOS DE ALUNOS (URL e Path)
+|--------------------------------------------------------------------------
+*/
+
+if (!function_exists('syrios_user_photo_path')) {
+    /**
+     * Retorna caminho ABSOLUTO da foto do aluno
+     * ou o padrao.png.
+     */
+    function syrios_user_photo_path($matricula, $schoolId = null)
+    {
+        $schoolId = $schoolId ?: session('current_school_id');
+        $base = "{$schoolId}_{$matricula}";
+
+        $found = syrios_find_file("img-user", $base);
+
+        return $found ?: storage_syrios_path("img-user/padrao.png");
+    }
+}
+
+if (!function_exists('syrios_user_photo')) {
+    /**
+     * Retorna a URL PÚBLICA da foto do aluno usando o path real.
+     */
+    function syrios_user_photo($matricula, $schoolId = null)
+    {
+        $schoolId = $schoolId ?: session('current_school_id');
+        $base = "{$schoolId}_{$matricula}";
+
+        // tenta localizar arquivo real por extensão
+        foreach (syrios_valid_extensions() as $ext) {
+            $relative = "img-user/{$base}.{$ext}";
+            if (file_exists(storage_syrios_path($relative))) {
+                return storage_syrios_url($relative);
+            }
+        }
+
+        // fallback
+        return storage_syrios_url("img-user/padrao.png");
+    }
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| LOGO DAS ESCOLAS (URL)
+|--------------------------------------------------------------------------
+*/
+if (!function_exists('syrios_school_logo')) {
+    /**
+     * Retorna URL da logo da escola (independente da extensão)
+     * 
+     * Caso schoolId = 0 → retorna a logo principal do sistema (syrios.png)
+     */
+    function syrios_school_logo($schoolId)
+    {
+        // Caso especial: logo principal do sistema
+        if ((int)$schoolId === 0) {
+
+            // tenta várias extensões: syrios.png / syrios.jpg / syrios.webp
+            foreach (syrios_valid_extensions() as $ext) {
+                $relative = "logos/syrios.{$ext}";
+
+                if (file_exists(storage_syrios_path($relative))) {
+                    return storage_syrios_url($relative);
+                }
+            }
+
+            // fallback final (deveria existir sempre)
+            return storage_syrios_url("logos/syrios.png");
+        }
+
+        // Logo normal de escola
+        $base = "{$schoolId}_logo";
+
+        foreach (syrios_valid_extensions() as $ext) {
+            $relative = "logos/{$base}.{$ext}";
+
+            if (file_exists(storage_syrios_path($relative))) {
+                return storage_syrios_url($relative);
+            }
+        }
+
+        // fallback
+        return storage_syrios_url("logos/syrios.png");
+    }
+}
+
+
+/**
+ * Converte uma URL pública vinda de storage_syrios_url()
+ * para um caminho relativo dentro de storage/app/public.
+ *
+ * Remove automaticamente todos os prefixos possíveis
+ * em Railway, WAMP, InfinityFree, subdiretórios etc.
+ */
+if (!function_exists('syrios_url_to_storage_relative')) {
+    function syrios_url_to_storage_relative(string $url): string
+    {
+        // remove domínio
+        $clean = str_replace(url('/') . '/', '', $url);
+
+        // tratamento ESPECIAL = só se InfinityFree
+        if (is_infinityfree()) {
+            // remove swriosia/storage/app/public/
+            $clean = preg_replace('#^.*/storage/app/public/#', '', $clean);
+        } else {
+            // Railway/WAMP - remove somente "storage/"
+            $clean = preg_replace('#^storage/#', '', $clean);
+        }
+
+        return ltrim($clean, '/');
+    }
+}
+// if (!function_exists('syrios_url_to_storage_relative')) {
+//     function syrios_url_to_storage_relative(string $url): string
+//     {
+//         // 1) Remove domínio e subpastas até chegar no path interno
+//         $clean = str_replace(url('/') . '/', '', $url);
+
+//         // 2) Remove o prefixo InfinityFree ("syriosia/storage/app/public/")
+//         $clean = preg_replace('#^.*/storage/app/public/#', '', $clean);
+
+//         // 3) Remove o prefixo Railway/Localhost ("storage/")
+//         $clean = preg_replace('#^storage/#', '', $clean);
+
+//         return ltrim($clean, '/');
+//     }
+// }
+
 
 
