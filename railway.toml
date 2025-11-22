@@ -1,5 +1,8 @@
 [build]
-builder = "nixpacks"
+builder = "paketobuildpacks/builder:base"
 
-[variables]
-PHP_VERSION = "8.3"
+[env]
+BP_PHP_VERSION = "8.2"
+
+[start]
+command = "php artisan serve --host=0.0.0.0 --port=8080"
