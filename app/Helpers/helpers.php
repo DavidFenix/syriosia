@@ -1,6 +1,7 @@
 ﻿<?php
 
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Storage;
 
 if (!function_exists('prefix')) {
     function prefix(string $basename = ''): string
@@ -241,3 +242,28 @@ if (!function_exists('sql_dump')) {
         ]);
     }
 }
+
+if (!function_exists('is_infinityfree')) {
+    function is_infinityfree() {
+        return str_contains($_SERVER['HTTP_HOST'] ?? '', 'rf.gd')
+            || str_contains($_SERVER['HTTP_HOST'] ?? '', 'epizy.com')
+            || str_contains($_SERVER['DOCUMENT_ROOT'] ?? '', '/htdocs/');
+    }
+}
+
+if (!function_exists('storage_syrios_url')) {
+    function storage_syrios_url(string $path): string
+    {
+        $path = ltrim($path, '/');
+
+        // 🔴 INFINITYFREE: usa o caminho real físico do projeto
+        if (is_infinityfree()) {
+            return url("syriosia/storage/app/public/{$path}");
+        }
+
+        // 🟢 RAILWAY / LOCAL / VPS: usa o storage normal (symlink funciona)
+        return url("storage/{$path}");
+    }
+}
+
+

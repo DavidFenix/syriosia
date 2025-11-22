@@ -25,8 +25,11 @@
     {{-- 📄 Visualização atual --}}
     @if($regimento && $regimento->arquivo)
         <h5 class="mb-3">📄 Regimento atual</h5>
-        <iframe src="{{ asset('storage/'.$regimento->arquivo) }}" width="100%" height="700"
-                style="border:1px solid #ccc; border-radius:8px;"></iframe>
+        <iframe src="{{ storage_syrios_url($regimento->arquivo) }}" 
+        width="100%" height="700"
+        style="border:1px solid #ccc; border-radius:8px;">
+</iframe>
+
     @else
         <p class="text-muted mt-3">Nenhum regimento cadastrado até o momento.</p>
     @endif
